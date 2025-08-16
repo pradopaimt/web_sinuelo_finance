@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sinuelo Finance — Protótipo v0.1</title>
+  <style>
+    :root{
+      --bg:#0f172a; /* slate-900 */
+      --panel:#111827; /* gray-900 */
+      --muted:#94a3b8; /* slate-400 */
+      --text:#e5e7eb; /* gray-200 */
+      --accent:#22c55e; /* green-500 */
+      --accent-2:#06b6d4; /* cyan-500 */
+      --danger:#ef4444; /* red-500 */
+      --warn:#f59e0b; /* amber-500 */
+      --ok:#10b981; /* emerald-500 */
+      --shadow: 0 10px 25px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', 'Noto Sans', Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+      color:var(--text); background:linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+    }
+    header{
+      position:sticky; top:0; z-index:10;
+      background:rgba(15,23,42,.8); backdrop-filter:saturate(1.2) blur(10px);
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .container{max-width:1100px; margin:0 auto; padding:16px}
+    .brand{display:flex; align-items:center; gap:12px}
+    .logo{
+      width:36px; height:36px; border-radius:12px;
+      background: radial-gradient(circle at 30% 30%, var(--accent) 0%, #16a34a 35%, #164e63 100%);
+      box-shadow: var(--shadow);
+    }
+    h1{font-size:20px; margin:0; letter-spacing:.3px}
+
+    nav{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap}
+    .tab{
+      border:1px solid rgba(255,255,255,.08);
+      background:#0b1220; color:var(--text);
+      padding:10px 14px; border-radius:999px; cursor:pointer; user-select:none;
+    }
+    .tab.active{background:var(--accent-2); color:#001015; border-color:transparent; font-weight:600}
+
+    .grid{
+      display:grid; gap:16px; grid-template-columns: 1fr; 
+    }
+    @media (min-width: 900px){
+      .grid{grid-template-columns: 1.1fr .9fr}
+    }
+
+    .card{
+      background: rgba(17,24,39,.75); border:1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius); padding:16px; box-shadow: var(--shadow);
+    }
+    .card h2{margin:4px 0 12px 0; font-size:18px}
+
+    label{font-size:12px; color:var(--muted)}
+    input, select, textarea{
+      width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.08);
+      background:#0b1220; color:var(--text);
+    }
+    .row{display:grid; grid-template-columns:1fr; gap:12px}
+    @media(min-width:700px){.row.cols-2{grid-template-columns:1fr 1fr}}
+    @media(min-width:900px){.row.cols-3{grid-template-columns:1fr 1fr 1fr}}
+
+    button{
+      appearance:none; border:none; padding:12px 16px; border-radius:12px; cursor:pointer;
+      background:var(--accent); color:#052e16; font-weight:700; box-shadow:var(--shadow);
+    }
+    button.secondary{background:#0b1220; color:var(--text); border:1px solid rgba(255,255,255,.1)}
+    button.danger{background:var(--danger); color:#310808}
+    .btns{display:flex; gap:8px; flex-wrap:wrap}
+
+    .kpis{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px}
+    .kpi{background:#0b1220;border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px}
+    .kpi .label{font-size:12px; color:var(--muted)}
+    .kpi .value{font-size:22px; font-weight:800; margin-top:4px}
+
+    table{width:100%; border-collapse:collapse}
+    th, td{ padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.06); text-align:left; font-size:14px}
+    th{color:var(--muted); font-weight:600}
+    tr:hover{background:rgba(255,255,255,.03)}
+
+    .pill{display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700}
+    .pill.in{background:rgba(34,197,94,.15); color:#86efac; border:1px solid rgba(34,197,94,.35)}
+    .pill.out{background:rgba(239,68,68,.12); color:#fecaca; border:1px solid rgba(239,68,68,.35)}
+
+    footer{color:var(--muted); font-size:12px; text-align:center; padding:24px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Agropecuária Sinuelo — Finance</h1>
+          <div style="font-size:12px; color:var(--muted)">Protótipo inicial (v0.1) • pronto para virar PWA</div>
+        </div>
+      </div>
+      <nav style="margin-top:14px">
+        <div class="tab active" data-tab="lancamentos">Lançamentos</div>
+        <div class="tab" data-tab="extrato">Extrato</div>
+        <div class="tab" data-tab="categorias">Categorias</div>
+        <div class="tab" data-tab="config">Configurações</div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top:18px">
+    <section id="lancamentos" class="grid">
+      <div class="card">
+        <h2>Novo lançamento</h2>
+        <form id="formLanc" autocomplete="off">
+          <div class="row cols-3">
+            <div>
+              <label for="data">Data</label>
+              <input type="date" id="data" required />
+            </div>
+            <div>
+              <label for="tipo">Tipo</label>
+              <select id="tipo" required>
+                <option value="receita">Receita</option>
+                <option value="despesa">Despesa</option>
+              </select>
+            </div>
+            <div>
+              <label for="valor">Valor (R$)</label>
+              <input inputmode="decimal" id="valor" placeholder="0,00" required />
+            </div>
+          </div>
+
+          <div class="row cols-2" style="margin-top:12px">
+            <div>
+              <label for="categoria">Categoria</label>
+              <select id="categoria"></select>
+            </div>
+            <div>
+              <label for="fazenda">Fazenda / Centro de Custo</label>
+              <input id="fazenda" list="fazendas" placeholder="Ex.: Reunidas, IF Goiano..." />
+              <datalist id="fazendas"></datalist>
+            </div>
+          </div>
+
+          <div class="row cols-2" style="margin-top:12px">
+            <div>
+              <label for="descricao">Descrição</label>
+              <input id="descricao" placeholder="Ex.: Venda de bezerros, ração, adubo..." />
+            </div>
+            <div>
+              <label for="pagamento">Forma de pagamento</label>
+              <select id="pagamento">
+                <option>Pix</option>
+                <option>Dinheiro</option>
+                <option>Cartão</option>
+                <option>Boleto</option>
+                <option>Transferência</option>
+                <option>Nota a pagar/receber</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <div>
+              <label for="anexo">Anexo (foto ou PDF da nota)</label>
+              <input type="file" id="anexo" accept="image/*,.pdf" />
+            </div>
+          </div>
+
+          <div class="btns" style="margin-top:16px">
+            <button type="submit">Salvar lançamento</button>
+            <button type="button" class="secondary" id="limpar">Limpar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Resumo rápido</h2>
+        <div class="kpis">
+          <div class="kpi"><div class="label">Receitas (mês)</div><div class="value" id="kpiRec">R$ 0,00</div></div>
+          <div class="kpi"><div class="label">Despesas (mês)</div><div class="value" id="kpiDesp">R$ 0,00</div></div>
+          <div class="kpi"><div class="label">Saldo (mês)</div><div class="value" id="kpiSaldo">R$ 0,00</div></div>
+        </div>
+        <div style="margin-top:16px" class="btns">
+          <button type="button" class="secondary" id="exportCsv">Exportar CSV</button>
+          <button type="button" class="secondary" id="importCsvBtn">Importar CSV</button>
+          <input type="file" id="importCsv" accept="text/csv" style="display:none" />
+        </div>
+      </div>
+    </section>
+
+    <section id="extrato" class="card" style="display:none">
+      <div class="row cols-3">
+        <div>
+          <label for="filtroMes">Mês</label>
+          <input type="month" id="filtroMes" />
+        </div>
+        <div>
+          <label for="filtroTipo">Tipo</label>
+          <select id="filtroTipo">
+            <option value="">Todos</option>
+            <option value="receita">Receita</option>
+            <option value="despesa">Despesa</option>
+          </select>
+        </div>
+        <div>
+          <label for="buscaTxt">Busca</label>
+          <input id="buscaTxt" placeholder="Descrição, categoria, fazenda..." />
+        </div>
+      </div>
+      <div style="overflow:auto; margin-top:12px">
+        <table id="tabela">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Tipo</th>
+              <th>Categoria</th>
+              <th>Descrição</th>
+              <th>Fazenda/CC</th>
+              <th>Pagamento</th>
+              <th>Valor</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="categorias" class="card" style="display:none">
+      <h2>Gerenciar categorias</h2>
+      <div class="row cols-3">
+        <div>
+          <label>Nova categoria</label>
+          <input id="novaCat" placeholder="Ex.: Ração, Adubo, Venda gado..." />
+        </div>
+        <div>
+          <label>Grupo</label>
+          <select id="grupoCat">
+            <option value="receita">Receita</option>
+            <option value="despesa">Despesa</option>
+          </select>
+        </div>
+        <div class="btns" style="align-items:end">
+          <button id="addCat">Adicionar</button>
+        </div>
+      </div>
+      <div style="margin-top:12px; overflow:auto">
+        <table id="tabCats">
+          <thead><tr><th>Categoria</th><th>Grupo</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="config" class="card" style="display:none">
+      <h2>Configurações</h2>
+      <div class="row cols-2">
+        <div>
+          <label for="centros">Fazendas / Centros de Custo (separe por vírgula)</label>
+          <textarea id="centros" rows="3" placeholder="Reunidas, IF Goiano, Usina Decal..."></textarea>
+          <div class="btns" style="margin-top:8px"><button id="salvarCentros">Salvar</button></div>
+        </div>
+        <div>
+          <p style="color:var(--muted); font-size:14px; line-height:1.5">
+            Este protótipo salva os dados apenas no seu <strong>navegador (localStorage)</strong> para testes. 
+            Na versão real, haverá login e os dados ficarão em banco de dados seguro, com OCR de notas.
+          </p>
+          <button class="danger" id="apagarTudo">Apagar todos os dados (teste)</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>© <span id="ano"></span> Agropecuária Sinuelo • Protótipo</footer>
+
+  <script>
+    // ===== Utilidades =====
+    const BRL = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
+    const parseBR = (s)=> Number(String(s).replace(/\./g,'').replace(',','.')) || 0;
+    const fmtDate = (iso)=> new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR');
+
+    // ===== Estado =====
+    const state = {
+      lanc: JSON.parse(localStorage.getItem('sinuelo_lanc')||'[]'),
+      cats: JSON.parse(localStorage.getItem('sinuelo_cats')||'[]'),
+      centros: JSON.parse(localStorage.getItem('sinuelo_centros')||'[]')
+    };
+
+    // Defaults iniciais
+    if(state.cats.length === 0){
+      state.cats = [
+        {nome:'Venda de gado', grupo:'receita'},
+        {nome:'Venda de grãos', grupo:'receita'},
+        {nome:'Ração', grupo:'despesa'},
+        {nome:'Sal mineral', grupo:'despesa'},
+        {nome:'Adubo', grupo:'despesa'},
+        {nome:'Mão-de-obra', grupo:'despesa'},
+      ];
+      persist()
+    }
+
+    // ===== Tabs =====
+    const tabs = document.querySelectorAll('.tab');
+    const sections = ['lancamentos','extrato','categorias','config'];
+    tabs.forEach(t=> t.addEventListener('click', ()=>{
+      tabs.forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      sections.forEach(id => document.getElementById(id).style.display = id===t.dataset.tab ? (id==='lancamentos'?'grid':'block') : 'none');
+      if(t.dataset.tab==='extrato') renderTabela();
+      if(t.dataset.tab==='categorias') renderCats();
+      if(t.dataset.tab==='lancamentos') updateKPIs();
+    }));
+
+    // ===== Form Lançamento =====
+    const el = {
+      data: document.getElementById('data'),
+      tipo: document.getElementById('tipo'),
+      valor: document.getElementById('valor'),
+      categoria: document.getElementById('categoria'),
+      fazenda: document.getElementById('fazenda'),
+      pagamento: document.getElementById('pagamento'),
+      descricao: document.getElementById('descricao'),
+      anexo: document.getElementById('anexo')
+    };
+
+    // Valor: máscara simples pt-BR
+    el.valor.addEventListener('input', (e)=>{
+      const raw = e.target.value.replace(/[^\d]/g,'');
+      const num = (Number(raw)/100).toFixed(2);
+      e.target.value = num.replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    });
+
+    // Preenche selects iniciais
+    function fillCategoria(){
+      const sel = el.categoria; sel.innerHTML = '';
+      const grupo = el.tipo.value; // filtra por tipo
+      state.cats.filter(c=>c.grupo===grupo).forEach(c=>{
+        const o=document.createElement('option'); o.textContent=c.nome; o.value=c.nome; sel.appendChild(o);
+      });
+    }
+    el.tipo.addEventListener('change', fillCategoria);
+
+    function fillCentros(){
+      const dl = document.getElementById('fazendas'); dl.innerHTML='';
+      state.centros.forEach(n=>{ const o=document.createElement('option'); o.value=n.trim(); dl.appendChild(o); })
+    }
+
+    function persist(){
+      localStorage.setItem('sinuelo_lanc', JSON.stringify(state.lanc));
+      localStorage.setItem('sinuelo_cats', JSON.stringify(state.cats));
+      localStorage.setItem('sinuelo_centros', JSON.stringify(state.centros));
+    }
+
+    document.getElementById('formLanc').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const item = {
+        id: crypto.randomUUID(),
+        data: el.data.value || new Date().toISOString().slice(0,10),
+        tipo: el.tipo.value,
+        valor: parseBR(el.valor.value),
+        categoria: el.categoria.value || '',
+        fazenda: el.fazenda.value || '',
+        pagamento: el.pagamento.value || '',
+        descricao: el.descricao.value || '',
+        anexoNome: el.anexo.files[0]?.name || null
+      };
+      state.lanc.unshift(item);
+      persist();
+      (document.getElementById('formLanc')).reset();
+      fillCategoria(); fillCentros(); updateKPIs();
+      alert('Lançamento salvo!');
+    });
+
+    document.getElementById('limpar').addEventListener('click', ()=>{
+      (document.getElementById('formLanc')).reset(); fillCategoria();
+    });
+
+    // ===== KPIs (mês atual) =====
+    function updateKPIs(){
+      const now = new Date(); const ym = now.toISOString().slice(0,7);
+      const mes = state.lanc.filter(x=> x.data?.startsWith(ym));
+      const rec = mes.filter(x=>x.tipo==='receita').reduce((s,x)=>s+x.valor,0);
+      const desp = mes.filter(x=>x.tipo==='despesa').reduce((s,x)=>s+x.valor,0);
+      document.getElementById('kpiRec').textContent = BRL.format(rec);
+      document.getElementById('kpiDesp').textContent = BRL.format(desp);
+      document.getElementById('kpiSaldo').textContent = BRL.format(rec-desp);
+    }
+
+    // ===== Extrato =====
+    const filtroMes = document.getElementById('filtroMes');
+    const filtroTipo = document.getElementById('filtroTipo');
+    const buscaTxt = document.getElementById('buscaTxt');
+    [filtroMes,filtroTipo,buscaTxt].forEach(el=> el.addEventListener('input', renderTabela));
+
+    function renderTabela(){
+      const tbody = document.querySelector('#tabela tbody');
+      tbody.innerHTML='';
+      let arr = [...state.lanc];
+      if(filtroMes.value) arr = arr.filter(x=> x.data?.startsWith(filtroMes.value));
+      if(filtroTipo.value) arr = arr.filter(x=> x.tipo===filtroTipo.value);
+      const q = buscaTxt.value?.toLowerCase?.() || '';
+      if(q) arr = arr.filter(x=> (x.categoria+x.descricao+x.fazenda+x.pagamento).toLowerCase().includes(q));
+      arr.forEach(x=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML = `
+          <td>${fmtDate(x.data)}</td>
+          <td>${x.tipo==='receita' ? '<span class="pill in">Receita</span>' : '<span class="pill out">Despesa</span>'}</td>
+          <td>${x.categoria||'-'}</td>
+          <td>${x.descricao||'-'}</td>
+          <td>${x.fazenda||'-'}</td>
+          <td>${x.pagamento||'-'}</td>
+          <td style="font-weight:700">${BRL.format(x.valor)}</td>
+          <td style="text-align:right">
+            <button class="secondary" onclick="editar('${x.id}')">Editar</button>
+            <button class="danger" onclick="excluir('${x.id}')">Excluir</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.editar = (id)=>{
+      const x = state.lanc.find(i=>i.id===id); if(!x) return;
+      // Preenche formulário para edição rápida
+      document.querySelector('[data-tab="lancamentos"]').click();
+      el.data.value = x.data; el.tipo.value = x.tipo; fillCategoria(); el.categoria.value = x.categoria;
+      el.valor.value = BRL.format(x.valor).replace('R$\xa0','').trim();
+      el.fazenda.value = x.fazenda; el.pagamento.value = x.pagamento; el.descricao.value = x.descricao;
+      // Remove antigo, salva novo no submit
+      state.lanc = state.lanc.filter(i=>i.id!==id); persist(); updateKPIs();
+    }
+
+    window.excluir = (id)=>{
+      if(!confirm('Excluir este lançamento?')) return;
+      state.lanc = state.lanc.filter(i=>i.id!==id); persist(); renderTabela(); updateKPIs();
+    }
+
+    // ===== Categorias =====
+    function renderCats(){
+      const tbody = document.querySelector('#tabCats tbody'); tbody.innerHTML='';
+      state.cats.forEach((c,idx)=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML = `<td>${c.nome}</td><td>${c.grupo}</td><td style="text-align:right"><button class="danger" onclick="delCat(${idx})">Remover</button></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+    window.delCat = (idx)=>{ state.cats.splice(idx,1); persist(); renderCats(); fillCategoria(); }
+
+    document.getElementById('addCat').addEventListener('click', ()=>{
+      const nome = document.getElementById('novaCat').value.trim();
+      const grupo = document.getElementById('grupoCat').value;
+      if(!nome) return alert('Informe o nome da categoria');
+      state.cats.push({nome,grupo}); persist(); document.getElementById('novaCat').value=''; renderCats(); fillCategoria();
+    });
+
+    // ===== Config: Centros de Custo =====
+    document.getElementById('salvarCentros').addEventListener('click', ()=>{
+      const txt = document.getElementById('centros').value;
+      state.centros = txt.split(',').map(x=>x.trim()).filter(Boolean); persist(); fillCentros(); alert('Centros de custo salvos!');
+    });
+
+    // ===== Botões perigosos =====
+    document.getElementById('apagarTudo').addEventListener('click', ()=>{
+      if(!confirm('Excluir TODOS os dados de teste?')) return;
+      state.lanc = []; state.cats = []; state.centros = []; persist(); fillCategoria(); fillCentros(); renderTabela(); updateKPIs();
+      alert('Limpamos os dados.'); location.reload();
+    });
+
+    // ===== Exportar / Importar CSV (simples) =====
+    document.getElementById('exportCsv').addEventListener('click', ()=>{
+      const header = ['id','data','tipo','categoria','descricao','fazenda','pagamento','valor'];
+      const rows = state.lanc.map(x=> header.map(h=>{
+        const v = x[h] ?? '';
+        return typeof v === 'number' ? String(v).replace('.',',') : String(v).replace(/"/g,'""');
+      }));
+      const csv = [header.join(';')].concat(rows.map(r=> r.join(';'))).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='sinuelo_finance.csv'; a.click();
+    });
+
+    document.getElementById('importCsvBtn').addEventListener('click', ()=> document.getElementById('importCsv').click());
+    document.getElementById('importCsv').addEventListener('change', (e)=>{
+      const file = e.target.files[0]; if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const lines = reader.result.split(/\r?\n/).filter(Boolean);
+        const header = lines.shift().split(';');
+        const idx = (name)=> header.indexOf(name);
+        const arr = lines.map(l=>{
+          const c = l.split(';');
+          return {
+            id: c[idx('id')] || crypto.randomUUID(),
+            data: c[idx('data')],
+            tipo: c[idx('tipo')],
+            categoria: c[idx('categoria')],
+            descricao: c[idx('descricao')],
+            fazenda: c[idx('fazenda')],
+            pagamento: c[idx('pagamento')],
+            valor: parseBR(c[idx('valor')]||'0')
+          }
+        });
+        state.lanc = arr.concat(state.lanc); persist(); updateKPIs(); alert('Importado! Abra o Extrato para conferir.');
+      }
+      reader.readAsText(file, 'utf-8');
+    });
+
+    // ===== Inicialização =====
+    document.getElementById('ano').textContent = new Date().getFullYear();
+    document.getElementById('data').value = new Date().toISOString().slice(0,10);
+    fillCategoria(); fillCentros(); updateKPIs();
+  </script>
+</body>
+</html>
