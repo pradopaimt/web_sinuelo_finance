@@ -275,6 +275,48 @@
         </table>
       </div>
       <p class="small">Tudo lançado em <b>Geral</b> é rateado proporcionalmente à área dos demais centros (exclui-se "Geral").</p>
+      <!-- Resumos agregados por natureza, conta e categoria -->
+      <div class="summary" style="margin-top:12px">
+        <h3 style="margin-top:0">Resumo por Natureza</h3>
+        <table id="tabSummaryNature" style="margin-bottom:8px">
+          <thead>
+            <tr>
+              <th>Natureza</th>
+              <th>Receita Total</th>
+              <th>Despesa Total</th>
+              <th>Resultado</th>
+              <th>% Particip.</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <h3>Resumo por Conta</h3>
+        <table id="tabSummaryAccount" style="margin-bottom:8px">
+          <thead>
+            <tr>
+              <th>Conta</th>
+              <th>Receita Total</th>
+              <th>Despesa Total</th>
+              <th>Resultado</th>
+              <th>% Particip.</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <h3>Resumo por Categoria</h3>
+        <table id="tabSummaryCategory">
+          <thead>
+            <tr>
+              <th>Categoria</th>
+              <th>Receita Total</th>
+              <th>Despesa Total</th>
+              <th>Resultado</th>
+              <th>% Particip.</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
 
     <!-- Seção de configurações -->
@@ -781,6 +823,77 @@
         rowHtml += `<td style="font-weight:700">${BRL.format(totalNet)}</td>`;
         tbody.innerHTML += `<tr>${rowHtml}</tr>`;
       });
+      // Agora atualiza resumos agregados usando os lançamentos filtrados
+      renderSummary(arr);
+    }
+
+    // Calcula e preenche resumos por natureza, conta e categoria
+    function renderSummary(arr){
+      // calcula totais geral de receita e despesa
+      let totalRec=0;
+      let totalDesp=0;
+      arr.forEach(x=>{
+        if(x.natureza==='RO' || x.natureza==='RNO'){
+          totalRec += x.valor;
+        } else {
+          totalDesp += x.valor;
+        }
+      });
+      const totalNet = totalRec - totalDesp;
+      // Totais por natureza
+      const sumNature = {};
+      arr.forEach(x=>{
+        const n=x.natureza;
+        if(!sumNature[n]) sumNature[n] = {rec:0, desp:0};
+        if(n==='RO' || n==='RNO') sumNature[n].rec += x.valor; else sumNature[n].desp += x.valor;
+      });
+      const tbodyNat=document.querySelector('#tabSummaryNature tbody');
+      if(tbodyNat){
+        tbodyNat.innerHTML='';
+        Object.keys(sumNature).forEach(key=>{
+          const rec=sumNature[key].rec||0;
+          const desp=sumNature[key].desp||0;
+          const net=rec-desp;
+          const perc=(totalNet!==0) ? ((net/totalNet)*100) : 0;
+          tbodyNat.innerHTML += `<tr><td>${key}</td><td>${BRL.format(rec)}</td><td>${BRL.format(desp)}</td><td>${BRL.format(net)}</td><td>${perc.toFixed(1)}%</td></tr>`;
+        });
+      }
+      // Totais por conta
+      const sumAcc={};
+      arr.forEach(x=>{
+        const acc=x.conta || '(sem conta)';
+        if(!sumAcc[acc]) sumAcc[acc] = {rec:0, desp:0};
+        if(x.natureza==='RO' || x.natureza==='RNO') sumAcc[acc].rec += x.valor; else sumAcc[acc].desp += x.valor;
+      });
+      const tbodyAcc=document.querySelector('#tabSummaryAccount tbody');
+      if(tbodyAcc){
+        tbodyAcc.innerHTML='';
+        Object.keys(sumAcc).forEach(key=>{
+          const rec=sumAcc[key].rec||0;
+          const desp=sumAcc[key].desp||0;
+          const net=rec-desp;
+          const perc=(totalNet!==0) ? ((net/totalNet)*100) : 0;
+          tbodyAcc.innerHTML += `<tr><td>${key}</td><td>${BRL.format(rec)}</td><td>${BRL.format(desp)}</td><td>${BRL.format(net)}</td><td>${perc.toFixed(1)}%</td></tr>`;
+        });
+      }
+      // Totais por categoria
+      const sumCat={};
+      arr.forEach(x=>{
+        const cat=x.categoria || '(sem categoria)';
+        if(!sumCat[cat]) sumCat[cat] = {rec:0, desp:0};
+        if(x.natureza==='RO' || x.natureza==='RNO') sumCat[cat].rec += x.valor; else sumCat[cat].desp += x.valor;
+      });
+      const tbodyCat=document.querySelector('#tabSummaryCategory tbody');
+      if(tbodyCat){
+        tbodyCat.innerHTML='';
+        Object.keys(sumCat).forEach(key=>{
+          const rec=sumCat[key].rec||0;
+          const desp=sumCat[key].desp||0;
+          const net=rec-desp;
+          const perc=(totalNet!==0) ? ((net/totalNet)*100) : 0;
+          tbodyCat.innerHTML += `<tr><td>${key}</td><td>${BRL.format(rec)}</td><td>${BRL.format(desp)}</td><td>${BRL.format(net)}</td><td>${perc.toFixed(1)}%</td></tr>`;
+        });
+      }
     }
     // Eventos do demonstrativo
     document.getElementById('demoTipo').addEventListener('change', onTipoChange);
