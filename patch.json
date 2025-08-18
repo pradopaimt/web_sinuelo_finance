@@ -1,0 +1,40 @@
+{
+  "edits": [
+    {
+      "find": "<div class=\\\"row\\\" style=\\\"margin-top:12px\\\">\\s*<div>\\s*<label for=\\\"anexo\\\">Anexo \\(foto ou PDF da nota\\)<\\/label>[\\s\\S]*?<\\/div>\\s*<\\/div>",
+      "replace": "<div class=\"row\" style=\"margin-top:8px\">\n  <label class=\"inline\"><input type=\"checkbox\" id=\"impostoRenda\" style=\"width:auto;margin-right:8px\"> Marcar como \"Imposto de Renda\"</label>\n</div>\n<div class=\"row\" style=\"margin-top:12px\">\n  <div>\n    <label for=\"anexo\">Anexo (foto ou PDF da nota)</label>\n    <input type=\"file\" id=\"anexo\" accept=\"image/*,.pdf\" />\n  </div>\n</div>"
+    },
+    {
+      "find": "<div class=\\\"row cols-3\\\">\\s*<div>\\s*<label>Mês<\\/label>\\s*<input type=\\\"month\\\" id=\\\"demoMes\\\" \\/>\\s*<\\/div>\\s*<div>\\s*<label>Área Total da Fazenda \\(ha\\)<\\/label>[\\s\\S]*?<\\/div>\\s*<\\/div>",
+      "replace": "<div class=\"row cols-3\">\n  <div>\n    <label>Tipo de demonstrativo</label>\n    <select id=\"demoTipo\">\n      <option value=\"safra\">Safra (ago→jul)</option>\n      <option value=\"ano\">Ano (jan→dez)</option>\n    </select>\n  </div>\n  <div id=\"demoPeriodo\">\n    <label id=\"lblPeriodo\">Safra (agosto a julho)</label>\n    <input type=\"number\" id=\"demoSafra\" min=\"2000\" step=\"1\" />\n    <div class=\"small\" id=\"helpPeriodo\">Ex.: 2024 → considera 01/08/2024 a 31/07/2025</div>\n    <label class=\"inline\" id=\"wrapIr\" style=\"display:none;margin-top:6px\"><input type=\"checkbox\" id=\"demoIrOnly\" style=\"width:auto;margin-right:8px\"> Somente \"Imposto de Renda\"</label>\n  </div>\n  <div>\n    <label>Área Total da Fazenda (ha)</label>\n    <input type=\"number\" id=\"areaTotal\" min=\"0\" step=\"0.01\" />\n  </div>\n</div>"
+    },
+    {
+      "find": "const elForm = \\{[\\s\\S]*?anexo: document.getElementById\\('anexo'\\)\\s*\\};",
+      "replace": "const elForm = {\n  data: document.getElementById('data'),\n  valor: document.getElementById('valor'),\n  descricao: document.getElementById('descricao'),\n  pagamento: document.getElementById('pagamento'),\n  ir: document.getElementById('impostoRenda'),\n  anexo: document.getElementById('anexo')\n};"
+    },
+    {
+      "find": "const item = \\{ id: crypto.randomUUID\\(\\), data: elForm.data.value \\|\\| new Date\\(\\)\\.toISOString\\(\\)\\.slice\\(0,10\\), natureza: elNat\\.value, conta: elConta\\.value\\|\\|'', categoria: elCat\\.value\\|\\|'', centro: elCentro\\.value\\|\\|'Geral', pagamento: elForm\\.pagamento\\.value\\|\\|'', descricao: elForm\\.descricao\\.value\\|\\|'', valor: parseBR\\(elForm\\.valor\\.value\\), anexoNome: elForm\\.anexo\\.files\\[0\\]\\?\\.name \\|\\| null \\};",
+      "replace": "const item = { id: crypto.randomUUID(), data: elForm.data.value || new Date().toISOString().slice(0,10), natureza: elNat.value, conta: elConta.value||'', categoria: elCat.value||'', centro: elCentro.value||'Geral', pagamento: elForm.pagamento.value||'', descricao: elForm.descricao.value||'', ir: !!elForm.ir?.checked, valor: parseBR(elForm.valor.value), anexoNome: elForm.anexo.files[0]?.name || null };"
+    },
+    {
+      "find": "elForm\\.descricao\\.value=x\\.descricao;",
+      "replace": "elForm.descricao.value=x.descricao; elForm.ir.checked=!!x.ir;"
+    },
+    {
+      "find": "const header=\\['id','data','natureza','conta','categoria','descricao','centro','pagamento','valor'\\];",
+      "replace": "const header=['id','data','natureza','conta','categoria','descricao','centro','pagamento','ir','valor'];"
+    },
+    {
+      "find": "return \\{ id:c\\[idx\\('id'\\)\\]\\|\\|crypto\\.randomUUID\\(\\), data:c\\[idx\\('data'\\)\\], natureza:c\\[idx\\('natureza'\\)\\]\\|\\|c\\[idx\\('tipo'\\)\\], conta:c\\[idx\\('conta'\\)\\], categoria:c\\[idx\\('categoria'\\)\\], descricao:c\\[idx\\('descricao'\\)\\], centro:c\\[idx\\('centro'\\)\\], pagamento:c\\[idx\\('pagamento'\\)\\], valor:parseBR\\(c\\[idx\\('valor'\\)\\]\\|\\|'0'\\) \\};",
+      "replace": "return { id:c[idx('id')]||crypto.randomUUID(), data:c[idx('data')], natureza:c[idx('natureza')]||c[idx('tipo')], conta:c[idx('conta')], categoria:c[idx('categoria')], descricao:c[idx('descricao')], centro:c[idx('centro')], pagamento:c[idx('pagamento')], ir: ((c[idx('ir')]||'').toLowerCase()=='true' || c[idx('ir')]=='1'), valor:parseBR(c[idx('valor')]||'0') };"
+    },
+    {
+      "find": "// ===== Demo: rateio do Geral =====[\\s\\S]*?// ===== Exportar \\/ Importar CSV =====",
+      "replace": "// ===== Demo: rateio do Geral (Safra/Ano + IR-only) =====\nconst demoTipo=document.getElementById('demoTipo');\nconst demoSafra=document.getElementById('demoSafra');\nconst wrapIr=document.getElementById('wrapIr');\nconst demoIrOnly=document.getElementById('demoIrOnly');\nconst lblPeriodo=document.getElementById('lblPeriodo');\nconst helpPeriodo=document.getElementById('helpPeriodo');\n\nfunction setupDemoDefaults(){\n  const now=new Date();\n  const safraYear = (now.getMonth()>=7) ? now.getFullYear() : now.getFullYear()-1; // ago=7\n  demoTipo.value='safra';\n  demoSafra.value=String(safraYear);\n  wrapIr.style.display='none';\n}\nsetupDemoDefaults();\n\nfunction currentPeriod(){\n  const y = Number(demoSafra.value||new Date().getFullYear());\n  if(demoTipo.value==='safra'){\n    return {start:`${y}-08-01`, end:`${y+1}-07-31`, irOnly:false};\n  } else {\n    return {start:`${y}-01-01`, end:`${y}-12-31`, irOnly: !!demoIrOnly.checked};\n  }\n}\n\nfunction onTipoChange(){\n  if(demoTipo.value==='safra'){\n    lblPeriodo.textContent='Safra (agosto a julho)';\n    helpPeriodo.textContent='Ex.: 2024 → considera 01/08/2024 a 31/07/2025';\n    wrapIr.style.display='none';\n  } else {\n    lblPeriodo.textContent='Ano (janeiro a dezembro)';\n    helpPeriodo.textContent='Ex.: 2024 → considera 01/01/2024 a 31/12/2024';\n    wrapIr.style.display='inline-flex';\n  }\n  renderDemo();\n}\n\ndemoTipo.addEventListener('change', onTipoChange);\ndemoSafra.addEventListener('input', renderDemo);\ndemoIrOnly.addEventListener('change', renderDemo);\ndocument.getElementById('areaTotal').addEventListener('input', (e)=>{ state.areaTotal = Number(e.target.value)||0; persist(); renderDemo(); });\n\nfunction renderDemo(){\n  const tbody=document.querySelector('#tabDemo tbody');\n  tbody.innerHTML='';\n  const {start,end,irOnly} = currentPeriod();\n  let arr = state.lanc.filter(x=> x.data && x.data>=start && x.data<=end);\n  if(irOnly){ arr = arr.filter(x=> x.ir===true); }\n  const centers = state.centros.map(c=> ({...c}));\n  const totals = arr.reduce((acc,x)=>{ const c=x.centro||'Geral'; if(!acc[c]) acc[c]={rec:0,desp:0}; if(x.natureza==='RO'||x.natureza==='RNO') acc[c].rec += x.valor; else acc[c].desp += x.valor; return acc; },{});\n  const geral = totals['Geral'] || {rec:0, desp:0};\n  const base = centers.filter(c=> c.nome!=='Geral' && c.area>0);\n  const somaArea = base.reduce((s,c)=> s+c.area,0) || 0;\n  centers.forEach(c=>{\n    const own = totals[c.nome] || {rec:0, desp:0};\n    let rec = own.rec, desp = own.desp;\n    if(c.nome!=='Geral' && somaArea>0){ const share = c.area / somaArea; rec += geral.rec * share; desp += geral.desp * share; }\n    const tr=document.createElement('tr'); tr.innerHTML=`<td>${c.nome}</td><td>${(c.area||0).toLocaleString('pt-BR')}</td><td>${BRL.format(rec)}</td><td>${BRL.format(desp)}</td><td style='font-weight:700'>${BRL.format(rec-desp)}</td>`; tbody.appendChild(tr);\n  });\n}\n// ===== Exportar / Importar CSV ====="
+    },
+    {
+      "find": "document.getElementById\\('demoMes'\\)\\.value = new Date\\(\\)\\.toISOString\\(\\)\\.slice\\(0,7\\);",
+      "replace": "// removido: controle de mês substituído por período Safra/Ano"
+    }
+  ]
+}
