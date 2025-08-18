@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -7,7 +7,8 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/favicon.ico" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>Sinuelo Finance — Protótipo v0.5 (Plano de Contas editável)</title>
+  <title>Sinuelo Finance — Protótipo</title>
+  <!-- Estilos básicos do protótipo -->
   <style>
     :root{ --bg:#0f172a; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --accent-2:#06b6d4; --danger:#ef4444; --shadow:0 10px 25px rgba(0,0,0,.35); --radius:16px }
     *{box-sizing:border-box}
@@ -50,6 +51,7 @@
   </style>
 </head>
 <body>
+  <!-- Cabeçalho e navegação -->
   <header>
     <div class="container">
       <div class="brand">
@@ -73,7 +75,9 @@
     </div>
   </header>
 
+  <!-- Conteúdo principal -->
   <main class="container" style="padding-top:18px">
+    <!-- Seção de lançamentos -->
     <section id="lancamentos" class="grid">
       <div class="card">
         <h2>Novo lançamento</h2>
@@ -126,18 +130,17 @@
             </div>
           </div>
 
+          <!-- Único checkbox de Imposto de Renda -->
           <div class="row" style="margin-top:8px">
-  <label class="inline"><input type="checkbox" id="impostoRenda" style="width:auto;margin-right:8px"> Marcar como "Imposto de Renda"</label>
-</div>
-<div class="row" style="margin-top:8px">
-  <label class="inline"><input type="checkbox" id="impostoRenda" style="width:auto;margin-right:8px"> Marcar como "Imposto de Renda"</label>
-</div>
-<div class="row" style="margin-top:12px">
-  <div>
-    <label for="anexo">Anexo (foto ou PDF da nota)</label>
-    <input type="file" id="anexo" accept="image/*,.pdf" />
-  </div>
-</div>
+            <label class="inline"><input type="checkbox" id="impostoRenda" style="width:auto;margin-right:8px"> Marcar como "Imposto de Renda"</label>
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <div>
+              <label for="anexo">Anexo (foto ou PDF da nota)</label>
+              <input type="file" id="anexo" accept="image/*,.pdf" />
+            </div>
+          </div>
 
           <div class="btns" style="margin-top:16px">
             <button type="submit">Salvar lançamento</button>
@@ -146,6 +149,7 @@
         </form>
       </div>
 
+      <!-- Resumo rápido (KPIs) -->
       <div class="card">
         <h2>Resumo rápido (mês)</h2>
         <div class="kpis">
@@ -163,6 +167,7 @@
       </div>
     </section>
 
+    <!-- Seção do extrato -->
     <section id="extrato" class="card" style="display:none">
       <div class="row cols-3">
         <div>
@@ -198,6 +203,7 @@
       </div>
     </section>
 
+    <!-- Seção Plano de Contas -->
     <section id="categorias" class="card" style="display:none">
       <h2>Plano de Contas (Natureza → Conta → Categoria)</h2>
       <div id="pcTree" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px"></div>
@@ -231,36 +237,47 @@
       <div class="small" style="margin-top:6px">Ao excluir uma conta com lançamentos, os lançamentos serão <b>reclassificados</b> para outra conta da mesma Natureza (você poderá escolher).</div>
     </section>
 
+    <!-- Seção de demonstrativos -->
     <section id="demo" class="card" style="display:none">
       <h2>Demonstrativos por Centro (rateio do "Geral")</h2>
       <div class="row cols-3">
-  <div>
-    <label>Tipo de demonstrativo</label>
-    <select id="demoTipo">
-      <option value="safra">Safra (ago→jul)</option>
-      <option value="ano">Ano (jan→dez)</option>
-    </select>
-  </div>
-  <div id="demoPeriodo">
-    <label id="lblPeriodo">Safra (agosto a julho)</label>
-    <input type="number" id="demoSafra" min="2000" step="1" />
-    <div class="small" id="helpPeriodo">Ex.: 2024 → considera 01/08/2024 a 31/07/2025</div>
-    <label class="inline" id="wrapIr" style="display:none;margin-top:6px"><input type="checkbox" id="demoIrOnly" style="width:auto;margin-right:8px"> Somente "Imposto de Renda"</label>
-  </div>
-  <div>
-    <label>Área Total da Fazenda (ha)</label>
-    <input type="number" id="areaTotal" min="0" step="0.01" />
-  </div>
-</div>
+        <div>
+          <label>Tipo de demonstrativo</label>
+          <select id="demoTipo">
+            <option value="safra">Safra (agosto a julho)</option>
+            <option value="ano">Ano (janeiro a dezembro)</option>
+          </select>
+        </div>
+        <div id="demoPeriodo">
+          <label id="lblPeriodo">Safra (agosto a julho)</label>
+          <input type="number" id="demoSafra" min="2000" step="1" />
+          <div class="small" id="helpPeriodo">Ex.: 2024 — considera 01/08/2024 a 31/07/2025</div>
+          <label class="inline" id="wrapIr" style="display:none;margin-top:6px"><input type="checkbox" id="demoIrOnly" style="width:auto;margin-right:8px"> Somente "Imposto de Renda"</label>
+        </div>
+        <div>
+          <label>Área Total da Fazenda (ha)</label>
+          <input type="number" id="areaTotal" min="0" step="0.01" />
+        </div>
+      </div>
+      <!-- Novo seletor de centro de custo para demonstrativo -->
+      <div class="row cols-3" style="margin-top:8px">
+        <div>
+          <label>Centro de Custo</label>
+          <select id="demoCentro">
+            <option value="Todos">Todos</option>
+          </select>
+        </div>
+      </div>
       <div style="overflow:auto; margin-top:12px">
         <table id="tabDemo">
-          <thead><tr><th>Centro</th><th>Área (ha)</th><th>Receitas</th><th>Despesas</th><th>Saldo</th></tr></thead>
+          <thead><tr id="demoHeader"></tr></thead>
           <tbody></tbody>
         </table>
       </div>
       <p class="small">Tudo lançado em <b>Geral</b> é rateado proporcionalmente à área dos demais centros (exclui-se "Geral").</p>
     </section>
 
+    <!-- Seção de configurações -->
     <section id="config" class="card" style="display:none">
       <h2>Configurações</h2>
       <div class="row cols-2">
@@ -296,6 +313,7 @@
 
   <footer>© <span id="ano"></span> Agropecuária Sinuelo • Protótipo</footer>
 
+  <!-- Scripts -->
   <script>
     // ===== PWA =====
     if('serviceWorker' in navigator){ window.addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js').catch(console.warn)); }
@@ -317,7 +335,7 @@
       tax: JSON.parse(localStorage.getItem('sinuelo_tax')||'null')
     };
 
-    // Migração antigo -> novo
+    // Migração antigo -> novo (caso existam campos 'tipo')
     if(state.lanc.length && state.lanc[0].tipo && !state.lanc[0].natureza){
       state.lanc = state.lanc.map(x=> ({...x, natureza:x.tipo, conta:x.conta||'', categoria:x.categoria||x.categoria, tipo:undefined }));
     }
@@ -339,8 +357,8 @@
         {nome:'INSUMOS OVINOS', cats:['SAL MINERAL','RAÇÕES E SUPLEMENTAÇÃO','MEDICAMENTOS E VACINAS','MATERIAIS E FERRAMENTAS','FRETES','COMISSÕES','VETERINÁRIO E EXAMES','OUTROS']},
         {nome:'MANUTENÇÃO DE INSTALAÇÕES', cats:['EMPREITEIROS','INSUMO E MATERIAIS','OUTROS']},
         {nome:'PASTAGENS', cats:['SEMENTE E MUDAS','ADUBOS E FERTILIZANTES','DEFENSIVOS E HERBICIDAS','MATERIAIS E FERRAMENTAS','OUTROS']},
-        {nome:'MANUTENÇÃO DE MÁQUINAS E VEÍCULOS', cats:['DO-MANUTENÇÃO MÁQUINAS-TRATOR MF 4275','DO-MANUTENÇÃO MÁQUINAS-TRATOR MF 4292','DO-MANUTENÇÃO MÁQUINAS-TRATOR CASE 180','DO-MANUTENÇÃO MÁQUINAS-TRATOR MF 65X','DO-MANUTENÇÃO MÁQUINAS-TRATOR JD 5078','DO-MANUTENÇÃO MÁQUINAS-PA XCMG ZL30BR','DO-MANUTENÇÃO MÁQUINAS-COLHETadeira 1550','DO-MANUTENÇÃO MÁQUINAS-COLHETadeira 7500','DO-MANUTENÇÃO MÁQUINAS-PLANTADEIRA MF','DO-MANUTENÇÃO MÁQUINAS-PULVERIZADOR 3000 ADVANCED','DO-MANUTENÇÃO MÁQUINAS-IMPLEMENTOS','DO-MANUTENÇÃO MÁQUINAS-VEÍCULOS','DO-MANUTENÇÃO MÁQUINAS-MOTO','DO-MANUTENÇÃO MÁQUINAS-INSUMOS','DO-MANUTENÇÃO MÁQUINAS-LUBRIFICANTES, FILTROS E GRAXAS','OUTROS']},
-        {nome:'GRÃOS', cats:['SEMENTES','ADUBOS E FERTILIZANTES','INOCULANTES','ADUBOS FOLIARES','INSETICIDAS','FUNGICIDAS','HERBICIDAS','ÓLEO E REDUTOR DE PH','TRATAMENTO DE SEMENTE','MÃO-DE-OBRA','INSUMOS E MATERIAIS','SERV. TERCEIRIZADOS','TRANSPORTES E FRETES','ARMAZENAGEM E SECAGEM','ASSISTÊNCIA TÉCNICA','CORREÇÃO DO SOLO','DIVERSOS']},
+        {nome:'MANUTENÇÃO DE MÁQUINAS E VEÍCULOS', cats:['DO-MANUTENÇÃO MÁQUINAS-TRATOR MF 4275','DO-MANUTENÇÃO MÁQUINAS-TRATOR MF 4292','DO-MANUTENÇÃO MÁQUINAS-TRATOR CASE 180','DO-MANUTENÇÃO MÁQUINAS-TRATOR MF 65X','DO-MANUTENÇÃO MÁQUINAS-TRATOR JD 5078','DO-MANUTENÇÃO MÁQUINAS-PA XCMG ZL30BR','DO-MANUTENÇÃO MÁQUINAS-COLHEDadeira 1550','DO-MANUTENÇÃO MÁQUINAS-COLHEDadeira 7500','DO-MANUTENÇÃO MÁQUINAS-PLANTADEIRA MF','DO-MANUTENÇÃO MÁQUINAS-PULVERIZADOR 3000 ADVANCED','DO-MANUTENÇÃO MÁQUINAS-IMPLEMENTOS','DO-MANUTENÇÃO MÁQUINAS-VEÍCULOS','DO-MANUTENÇÃO MÁQUINAS-MOTO','DO-MANUTENÇÃO MÁQUINAS-INSUMOS','DO-MANUTENÇÃO MÁQUINAS-LUBRIFICANTES, FILTROS E GRAXAS','OUTROS']},
+        {nome:'GRÃOS', cats:['SEMENTES','ADUBOS E FERTILIZANTES','INOCULANTES','ADUBOS FOLIARES','INSETICIDAS','FUNGICIDAS','HERBICIDAS','ÓLEO E REDUTOR DE PH','TRATAMENTO DE SEMENTE','MÃO-DE-OBRA','INSUMOS E MATERIAIS','SERV. TERCERIZADOS','TRANSPORTES E FRETES','ARMAZENAGEM E SECAGEM','ASSISTÊNCIA TÉCNICA','CORREÇÃO DO SOLO','DIVERSOS']},
         {nome:'ADMINISTRATIVO', cats:['IMPOSTO, TAXAS E LICENÇAS','ESCRITÓRIO','PROFISSIONAIS ESPECIALIZADOS','JUROS, MULTAS, CORREÇÕES e IOF','CARTÓRIO E REGISTROS','SEGUROS','ENERGIA','ALIMENTAÇÃO CASA SEDE','TELEFONE + INTERNET','ANIMAIS DOMÉSTICOS','COMBUSTÍVEL VEÍCULO','CURSOS E TREINAMENTOS','FUNRURAL/SENAR','DOAÇÕES','OUTROS','RAÇÕES E INSUMOS - AVES E SUÍNOS','COMBUSTÍVEL MÁQUINAS']}
       ]},
       { code:'DNO', nome:'DESPESAS NÃO OPERACIONAIS', contas:[
@@ -350,13 +368,22 @@
       ]}
     ];
 
-    if(!state.tax){ state.tax = TAX_DEFAULT; persist(); }
+    // Inicializa state.tax se ainda não existir ou estiver vazio
+    if(!Array.isArray(state.tax) || state.tax.length===0){
+      state.tax = JSON.parse(JSON.stringify(TAX_DEFAULT));
+      persist();
+    }
 
-    // Centros default
+    // Centros default (adiciona se lista vazia)
     if(state.centros.length === 0){ state.centros = [ {nome:'Geral', area:0}, {nome:'Soja', area:0}, {nome:'Bovinos', area:0}, {nome:'Ovinos', area:0} ]; persist(); }
 
     // ===== Persistência =====
-    function persist(){ localStorage.setItem('sinuelo_lanc', JSON.stringify(state.lanc)); localStorage.setItem('sinuelo_centros', JSON.stringify(state.centros)); localStorage.setItem('sinuelo_area_total', String(state.areaTotal||0)); localStorage.setItem('sinuelo_tax', JSON.stringify(state.tax)); }
+    function persist(){
+      localStorage.setItem('sinuelo_lanc', JSON.stringify(state.lanc));
+      localStorage.setItem('sinuelo_centros', JSON.stringify(state.centros));
+      localStorage.setItem('sinuelo_area_total', String(state.areaTotal||0));
+      localStorage.setItem('sinuelo_tax', JSON.stringify(state.tax));
+    }
 
     // ===== UI Helpers (Plano de Contas) =====
     const elNat = document.getElementById('natureza');
@@ -377,7 +404,8 @@
     const tabs = document.querySelectorAll('.tab');
     const sections = ['lancamentos','extrato','categorias','demo','config'];
     tabs.forEach(t=> t.addEventListener('click', ()=>{
-      tabs.forEach(x=>x.classList.remove('active')); t.classList.add('active');
+      tabs.forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
       sections.forEach(id => document.getElementById(id).style.display = id===t.dataset.tab ? (id==='lancamentos'?'grid':'block') : 'none');
       if(t.dataset.tab==='extrato') renderTabela();
       if(t.dataset.tab==='categorias') renderPlanoContas();
@@ -388,57 +416,220 @@
 
     // ===== Form Lançamento =====
     const elForm = {
-  data: document.getElementById('data'),
-  valor: document.getElementById('valor'),
-  descricao: document.getElementById('descricao'),
-  pagamento: document.getElementById('pagamento'),
-  ir: document.getElementById('impostoRenda'),
-  anexo: document.getElementById('anexo')
-};
+      data: document.getElementById('data'),
+      valor: document.getElementById('valor'),
+      descricao: document.getElementById('descricao'),
+      pagamento: document.getElementById('pagamento'),
+      ir: document.getElementById('impostoRenda'),
+      anexo: document.getElementById('anexo')
+    };
 
-    // Máscara valor
-    elForm.valor.addEventListener('input', (e)=>{ const raw=e.target.value.replace(/[^\d]/g,''); const num=(Number(raw)/100).toFixed(2); e.target.value = num.replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); });
+    // Máscara de valor (R$)
+    elForm.valor.addEventListener('input', (e)=>{
+      const raw=e.target.value.replace(/[^\d]/g,'');
+      const num=(Number(raw)/100).toFixed(2);
+      e.target.value = num.replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    });
 
     document.getElementById('formLanc').addEventListener('submit', (e)=>{
       e.preventDefault();
-      const item = { id: crypto.randomUUID(), data: elForm.data.value || new Date().toISOString().slice(0,10), natureza: elNat.value, conta: elConta.value||'', categoria: elCat.value||'', centro: elCentro.value||'Geral', pagamento: elForm.pagamento.value||'', descricao: elForm.descricao.value||'', ir: !!elForm.ir?.checked, valor: parseBR(elForm.valor.value), anexoNome: elForm.anexo.files[0]?.name || null };
-      state.lanc.unshift(item); persist(); (document.getElementById('formLanc')).reset(); fillNatureza(); fillContas(); fillCentros(); updateKPIs(); alert('Lançamento salvo!');
+      const item = {
+        id: crypto.randomUUID(),
+        data: elForm.data.value || new Date().toISOString().slice(0,10),
+        natureza: elNat.value,
+        conta: elConta.value||'',
+        categoria: elCat.value||'',
+        centro: elCentro.value||'Geral',
+        pagamento: elForm.pagamento.value||'',
+        descricao: elForm.descricao.value||'',
+        ir: !!elForm.ir?.checked,
+        valor: parseBR(elForm.valor.value),
+        anexoNome: elForm.anexo.files[0]?.name || null
+      };
+      state.lanc.unshift(item);
+      persist();
+      document.getElementById('formLanc').reset();
+      fillNatureza(); fillContas(); fillCentros(); updateKPIs();
+      alert('Lançamento salvo!');
     });
-    document.getElementById('limpar').addEventListener('click', ()=>{ (document.getElementById('formLanc')).reset(); fillNatureza(); fillContas(); });
+    document.getElementById('limpar').addEventListener('click', ()=>{
+      document.getElementById('formLanc').reset(); fillNatureza(); fillContas();
+    });
 
     // ===== KPIs (mês atual) =====
-    function updateKPIs(){ const now=new Date(); const ym=now.toISOString().slice(0,7); const mes=state.lanc.filter(x=> x.data?.startsWith(ym)); const sum=(arr,cond)=> arr.filter(cond).reduce((s,x)=>s+x.valor,0);
-      const ro=sum(mes,x=>x.natureza==='RO'), rno=sum(mes,x=>x.natureza==='RNO'), doo=sum(mes,x=>x.natureza==='DO'), dno=sum(mes,x=>x.natureza==='DNO');
-      document.getElementById('kpiRO').textContent=BRL.format(ro); document.getElementById('kpiRNO').textContent=BRL.format(rno); document.getElementById('kpiDO').textContent=BRL.format(doo); document.getElementById('kpiDNO').textContent=BRL.format(dno); document.getElementById('kpiSaldo').textContent=BRL.format(ro+rno-doo-dno); }
+    function updateKPIs(){
+      const now=new Date();
+      const ym=now.toISOString().slice(0,7);
+      const mes=state.lanc.filter(x=> x.data?.startsWith(ym));
+      const sum=(arr,cond)=> arr.filter(cond).reduce((s,x)=>s+x.valor,0);
+      const ro=sum(mes,x=>x.natureza==='RO');
+      const rno=sum(mes,x=>x.natureza==='RNO');
+      const doo=sum(mes,x=>x.natureza==='DO');
+      const dno=sum(mes,x=>x.natureza==='DNO');
+      document.getElementById('kpiRO').textContent=BRL.format(ro);
+      document.getElementById('kpiRNO').textContent=BRL.format(rno);
+      document.getElementById('kpiDO').textContent=BRL.format(doo);
+      document.getElementById('kpiDNO').textContent=BRL.format(dno);
+      document.getElementById('kpiSaldo').textContent=BRL.format(ro + rno - doo - dno);
+    }
 
     // ===== Extrato =====
-    const filtroMes=document.getElementById('filtroMes'); const filtroNatureza=document.getElementById('filtroNatureza'); const buscaTxt=document.getElementById('buscaTxt'); [filtroMes,filtroNatureza,buscaTxt].forEach(x=> x.addEventListener('input', renderTabela));
-    function renderTabela(){ const tbody=document.querySelector('#tabela tbody'); tbody.innerHTML=''; let arr=[...state.lanc]; if(filtroMes.value) arr=arr.filter(x=> x.data?.startsWith(filtroMes.value)); if(filtroNatureza.value) arr=arr.filter(x=> x.natureza===filtroNatureza.value); const q=buscaTxt.value?.toLowerCase?.()||''; if(q) arr=arr.filter(x=> (x.categoria+x.descricao+x.conta+x.centro+x.pagamento).toLowerCase().includes(q)); arr.forEach(x=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${fmtDate(x.data)}</td><td>${x.natureza}</td><td>${x.conta||'-'}</td><td>${x.categoria||'-'}</td><td>${x.descricao||'-'}</td><td>${x.centro||'-'}</td><td>${x.pagamento||'-'}</td><td style="font-weight:700">${BRL.format(x.valor)}</td><td style="text-align:right"><button class="secondary" onclick="editar('${x.id}')">Editar</button> <button class="danger" onclick="excluir('${x.id}')">Excluir</button></td>`; tbody.appendChild(tr); }); }
-
-    window.editar = (id)=>{ const x=state.lanc.find(i=>i.id===id); if(!x) return; document.querySelector('[data-tab="lancamentos"]').click(); elForm.data.value=x.data; elNat.value=x.natureza; fillContas(); elConta.value=x.conta; fillCategorias(); elCat.value=x.categoria; elForm.valor.value=BRL.format(x.valor).replace('R$\xa0','').trim(); fillCentros(); elCentro.value=x.centro; elForm.pagamento.value=x.pagamento; elForm.descricao.value=x.descricao; elForm.ir.checked=!!x.ir; elForm.ir.checked=!!x.ir; state.lanc=state.lanc.filter(i=>i.id!==id); persist(); updateKPIs(); }
-    window.excluir = (id)=>{ if(!confirm('Excluir este lançamento?')) return; state.lanc=state.lanc.filter(i=>i.id!==id); persist(); renderTabela(); updateKPIs(); }
+    const filtroMes=document.getElementById('filtroMes');
+    const filtroNatureza=document.getElementById('filtroNatureza');
+    const buscaTxt=document.getElementById('buscaTxt');
+    [filtroMes,filtroNatureza,buscaTxt].forEach(x=> x.addEventListener('input', renderTabela));
+    function renderTabela(){
+      const tbody=document.querySelector('#tabela tbody');
+      tbody.innerHTML='';
+      let arr=[...state.lanc];
+      if(filtroMes.value) arr=arr.filter(x=> x.data?.startsWith(filtroMes.value));
+      if(filtroNatureza.value) arr=arr.filter(x=> x.natureza===filtroNatureza.value);
+      const q=buscaTxt.value?.toLowerCase?.()||'';
+      if(q) arr=arr.filter(x=> (x.categoria+x.descricao+x.conta+x.centro+x.pagamento).toLowerCase().includes(q));
+      arr.forEach(x=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td>${fmtDate(x.data)}</td><td>${x.natureza}</td><td>${x.conta||'-'}</td><td>${x.categoria||'-'}</td><td>${x.descricao||'-'}</td><td>${x.centro||'-'}</td><td>${x.pagamento||'-'}</td><td style="font-weight:700">${BRL.format(x.valor)}</td><td style="text-align:right"><button class="secondary" onclick="editar('${x.id}')">Editar</button> <button class="danger" onclick="excluir('${x.id}')">Excluir</button></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+    window.editar = (id)=>{
+      const x=state.lanc.find(i=>i.id===id);
+      if(!x) return;
+      document.querySelector('[data-tab="lancamentos"]').click();
+      elForm.data.value=x.data;
+      elNat.value=x.natureza;
+      fillContas();
+      elConta.value=x.conta;
+      fillCategorias();
+      elCat.value=x.categoria;
+      elForm.valor.value=BRL.format(x.valor).replace('R$\xa0','').trim();
+      fillCentros();
+      elCentro.value=x.centro;
+      elForm.pagamento.value=x.pagamento;
+      elForm.descricao.value=x.descricao;
+      elForm.ir.checked=!!x.ir;
+      state.lanc=state.lanc.filter(i=>i.id!==id);
+      persist(); updateKPIs();
+    }
+    window.excluir = (id)=>{
+      if(!confirm('Excluir este lançamento?')) return;
+      state.lanc=state.lanc.filter(i=>i.id!==id);
+      persist(); renderTabela(); updateKPIs();
+    }
 
     // ===== Plano de Contas (visual + CRUD de contas e categorias) =====
-    function renderPlanoContas(){ const root=document.getElementById('pcTree'); root.innerHTML=''; state.tax.forEach(n=>{ const col=document.createElement('div'); col.className='card'; const h=document.createElement('h3'); h.textContent=`${n.code} — ${n.nome}`; h.style.marginTop='0'; h.style.fontSize='16px'; col.appendChild(h); n.contas.forEach(c=>{ const b=document.createElement('div'); b.style.margin='8px 0'; const header=document.createElement('div'); header.className='inline'; header.innerHTML = `<span style="font-weight:700">${c.nome}</span> <button class='secondary' onclick="uiRenameConta('${n.code}', '${c.nome.replace(/'/g,"&#39;")}')">Renomear</button> <button class='danger' onclick="uiDeleteConta('${n.code}', '${c.nome.replace(/'/g,"&#39;")}')">Excluir</button>`; b.appendChild(header); const ul=document.createElement('ul'); ul.style.margin='6px 0 0 16px'; ul.style.padding='0'; c.cats.forEach(k=>{ const li=document.createElement('li'); li.textContent=k; li.style.margin='2px 0'; ul.appendChild(li); }); b.appendChild(ul); col.appendChild(b); }); root.appendChild(col); }); fillPcSelectors(); }
-
-    const pcNat=document.getElementById('pcNat'); const pcConta=document.getElementById('pcConta');
-    function fillPcSelectors(){ pcNat.innerHTML=''; state.tax.forEach(n=>{ const o=document.createElement('option'); o.value=n.code; o.textContent=`${n.code} — ${n.nome}`; pcNat.appendChild(o); }); fillPcContas(); }
-    function fillPcContas(){ pcConta.innerHTML=''; const n=state.tax.find(x=> x.code===pcNat.value); n?.contas.forEach(c=>{ const o=document.createElement('option'); o.value=c.nome; o.textContent=c.nome; pcConta.appendChild(o); }); }
+    function renderPlanoContas(){
+      const root=document.getElementById('pcTree');
+      root.innerHTML='';
+      state.tax.forEach(n=>{
+        const col=document.createElement('div');
+        col.className='card';
+        const h=document.createElement('h3');
+        h.textContent=`${n.code} — ${n.nome}`;
+        h.style.marginTop='0';
+        h.style.fontSize='16px';
+        col.appendChild(h);
+        n.contas.forEach(c=>{
+          const b=document.createElement('div');
+          b.style.margin='8px 0';
+          const header=document.createElement('div');
+          header.className='inline';
+          header.innerHTML = `<span style="font-weight:700">${c.nome}</span> <button class='secondary' onclick="uiRenameConta('${n.code}', '${c.nome.replace(/'/g,"&#39;")}')">Renomear</button> <button class='danger' onclick="uiDeleteConta('${n.code}', '${c.nome.replace(/'/g,"&#39;")}')">Excluir</button>`;
+          b.appendChild(header);
+          const ul=document.createElement('ul');
+          ul.style.margin='6px 0 0 16px';
+          ul.style.padding='0';
+          c.cats.forEach(k=>{
+            const li=document.createElement('li');
+            li.textContent=k;
+            li.style.margin='2px 0';
+            ul.appendChild(li);
+          });
+          b.appendChild(ul);
+          col.appendChild(b);
+        });
+        root.appendChild(col);
+      });
+      fillPcSelectors();
+    }
+    const pcNat=document.getElementById('pcNat');
+    const pcConta=document.getElementById('pcConta');
+    function fillPcSelectors(){
+      pcNat.innerHTML='';
+      state.tax.forEach(n=>{
+        const o=document.createElement('option');
+        o.value=n.code;
+        o.textContent=`${n.code} — ${n.nome}`;
+        pcNat.appendChild(o);
+      });
+      fillPcContas();
+    }
+    function fillPcContas(){
+      pcConta.innerHTML='';
+      const n=state.tax.find(x=> x.code===pcNat.value);
+      n?.contas.forEach(c=>{
+        const o=document.createElement('option');
+        o.value=c.nome;
+        o.textContent=c.nome;
+        pcConta.appendChild(o);
+      });
+    }
     pcNat.addEventListener('change', fillPcContas);
 
-    document.getElementById('pcAddCat').addEventListener('click', ()=>{ const nat=state.tax.find(x=> x.code===pcNat.value); const conta=nat?.contas.find(c=> c.nome===pcConta.value); const name=(document.getElementById('pcNovaCat').value||'').trim(); if(!name) return alert('Informe o nome da categoria'); if(conta.cats.includes(name)) return alert('Categoria já existe nesta conta.'); conta.cats.push(name); document.getElementById('pcNovaCat').value=''; persist(); renderPlanoContas(); fillContas(); });
-
-    document.getElementById('pcAddConta').addEventListener('click', ()=>{ const n=state.tax.find(x=> x.code===pcNat.value); const name=(document.getElementById('pcNovaConta').value||'').trim(); if(!name) return alert('Informe o nome da conta'); if(n.contas.some(c=> c.nome.toLowerCase()===name.toLowerCase())) return alert('Essa conta já existe nesta Natureza.'); n.contas.push({nome:name, cats:[]}); document.getElementById('pcNovaConta').value=''; persist(); renderPlanoContas(); fillContas(); fillPcContas(); });
-
-    document.getElementById('pcBtnRenomear').addEventListener('click', ()=>{ const n=state.tax.find(x=> x.code===pcNat.value); const oldName=pcConta.value; const newName=(document.getElementById('pcRenomearConta').value||'').trim(); if(!oldName) return alert('Selecione uma conta'); if(!newName) return alert('Digite o novo nome'); if(n.contas.some(c=> c.nome.toLowerCase()===newName.toLowerCase())) return alert('Já existe uma conta com esse nome.'); const conta=n.contas.find(c=> c.nome===oldName); conta.nome=newName; // reclassificar lançamentos
-      state.lanc.forEach(l=>{ if(l.natureza===n.code && l.conta===oldName){ l.conta=newName; } }); document.getElementById('pcRenomearConta').value=''; persist(); renderPlanoContas(); fillContas(); fillPcContas(); alert('Conta renomeada e lançamentos reclassificados.'); });
-
-    document.getElementById('pcBtnExcluir').addEventListener('click', ()=>{ const n=state.tax.find(x=> x.code===pcNat.value); const name=pcConta.value; if(!name) return alert('Selecione uma conta'); uiDeleteConta(n.code, name); });
-
+    document.getElementById('pcAddCat').addEventListener('click', ()=>{
+      const nat=state.tax.find(x=> x.code===pcNat.value);
+      const conta=nat?.contas.find(c=> c.nome===pcConta.value);
+      const name=(document.getElementById('pcNovaCat').value||'').trim();
+      if(!name) return alert('Informe o nome da categoria');
+      if(conta.cats.includes(name)) return alert('Categoria já existe nesta conta.');
+      conta.cats.push(name);
+      document.getElementById('pcNovaCat').value='';
+      persist(); renderPlanoContas(); fillContas();
+    });
+    document.getElementById('pcAddConta').addEventListener('click', ()=>{
+      const n=state.tax.find(x=> x.code===pcNat.value);
+      const name=(document.getElementById('pcNovaConta').value||'').trim();
+      if(!name) return alert('Informe o nome da conta');
+      if(n.contas.some(c=> c.nome.toLowerCase()===name.toLowerCase())) return alert('Essa conta já existe nesta Natureza.');
+      n.contas.push({nome:name, cats:[]});
+      document.getElementById('pcNovaConta').value='';
+      persist(); renderPlanoContas(); fillContas(); fillPcContas();
+    });
+    document.getElementById('pcBtnRenomear').addEventListener('click', ()=>{
+      const n=state.tax.find(x=> x.code===pcNat.value);
+      const oldName=pcConta.value;
+      const newName=(document.getElementById('pcRenomearConta').value||'').trim();
+      if(!oldName) return alert('Selecione uma conta');
+      if(!newName) return alert('Digite o novo nome');
+      if(n.contas.some(c=> c.nome.toLowerCase()===newName.toLowerCase())) return alert('Já existe uma conta com esse nome.');
+      const conta=n.contas.find(c=> c.nome===oldName);
+      conta.nome=newName;
+      // reclassificar lançamentos
+      state.lanc.forEach(l=>{ if(l.natureza===n.code && l.conta===oldName){ l.conta=newName; } });
+      document.getElementById('pcRenomearConta').value='';
+      persist(); renderPlanoContas(); fillContas(); fillPcContas(); alert('Conta renomeada e lançamentos reclassificados.');
+    });
+    document.getElementById('pcBtnExcluir').addEventListener('click', ()=>{
+      const n=state.tax.find(x=> x.code===pcNat.value);
+      const name=pcConta.value;
+      if(!name) return alert('Selecione uma conta');
+      uiDeleteConta(n.code, name);
+    });
     // Ações inline na árvore
-    window.uiRenameConta = (natCode, name)=>{ pcNat.value = natCode; fillPcContas(); pcConta.value = name; document.getElementById('pcRenomearConta').focus(); }
-    window.uiDeleteConta = (natCode, name)=>{ const n=state.tax.find(x=> x.code===natCode); const depend = state.lanc.filter(l=> l.natureza===natCode && l.conta===name).length; let destino = null; if(depend>0){ const outros = n.contas.map(c=>c.nome).filter(x=> x!==name); if(outros.length===0){ alert('Não é possível excluir: existe(m) lançamento(s) nessa conta e não há outra conta para reclassificar. Crie uma nova conta e tente novamente.'); return; }
-        destino = prompt(`Encontrados ${depend} lançamento(s) em "${name}". Digite o nome da conta de destino dentre: \n- ${outros.join('\n- ')}`);
+    window.uiRenameConta = (natCode, name)=>{
+      pcNat.value = natCode;
+      fillPcContas();
+      pcConta.value = name;
+      document.getElementById('pcRenomearConta').focus();
+    }
+    window.uiDeleteConta = (natCode, name)=>{
+      const n=state.tax.find(x=> x.code===natCode);
+      const depend = state.lanc.filter(l=> l.natureza===natCode && l.conta===name).length;
+      let destino = null;
+      if(depend>0){
+        const outros = n.contas.map(c=>c.nome).filter(x=> x!==name);
+        if(outros.length===0){ alert('Não é possível excluir: existe(m) lançamento(s) nessa conta e não há outra conta para reclassificar. Crie uma nova conta e tente novamente.'); return; }
+        destino = prompt(`Encontrados ${depend} lançamento(s) em "${name}". Digite o nome da conta de destino dentre:\n- ${outros.join('\n- ')}`);
         if(!destino || !outros.includes(destino)){ alert('Operação cancelada.'); return; }
       }
       if(!confirm(`Excluir a conta "${name}" da Natureza ${n.nome}?`)) return;
@@ -448,56 +639,222 @@
       if(destino){ const contaDst = n.contas.find(c=> c.nome===destino); const contaSrc = n.contas.find(c=> c.nome===name); contaSrc.cats.forEach(cat=>{ if(!contaDst.cats.includes(cat)) contaDst.cats.push(cat); }); }
       // Remover conta
       n.contas = n.contas.filter(c=> c.nome!==name);
-      persist(); renderPlanoContas(); fillContas(); fillPcContas(); alert('Conta excluída com sucesso.'); }
+      persist(); renderPlanoContas(); fillContas(); fillPcContas(); alert('Conta excluída com sucesso.');
+    }
 
     // ===== Config: Centros =====
     const tabCentrosBody = ()=> document.querySelector('#tabCentros tbody');
-    function renderCentros(){ const tbody=tabCentrosBody(); tbody.innerHTML=''; state.centros.forEach((c,idx)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${c.nome}</td><td><input type="number" min="0" step="0.01" value="${c.area}" onchange="updArea(${idx}, this.value)"/></td><td style="text-align:right">${c.nome!=='Geral'?`<button class='danger' onclick='delCentro(${idx})'>Remover</button>`:''}</td>`; tbody.appendChild(tr); }); }
-    window.updArea = (idx,val)=>{ state.centros[idx].area = Number(val)||0; persist(); }
-    window.delCentro = (idx)=>{ if(!confirm('Remover este centro?')) return; const nome=state.centros[idx].nome; if(nome==='Geral') return alert('Não é permitido remover "Geral".'); state.centros.splice(idx,1); persist(); renderCentros(); fillCentros(); }
-    document.getElementById('addCentro').addEventListener('click', ()=>{ const nome=document.getElementById('novoCentro').value.trim(); const area=Number(document.getElementById('novoCentroArea').value)||0; if(!nome) return alert('Informe o nome do centro'); if(state.centros.some(c=>c.nome.toLowerCase()===nome.toLowerCase())) return alert('Centro já existe.'); state.centros.push({nome, area}); document.getElementById('novoCentro').value=''; document.getElementById('novoCentroArea').value=''; persist(); renderCentros(); fillCentros(); });
-
-    document.getElementById('apagarTudo').addEventListener('click', ()=>{ if(!confirm('Excluir TODOS os dados de teste?')) return; state.lanc=[]; state.centros=[]; state.areaTotal=0; state.tax=null; persist(); location.reload(); });
-
-    // ===== Demo: rateio do Geral =====
-    const demoMes=document.getElementById('demoMes'); demoMes.addEventListener('input', renderDemo);
-    document.getElementById('areaTotal').addEventListener('input', (e)=>{ state.areaTotal = Number(e.target.value)||0; persist(); renderDemo(); });
-    function renderDemo(){ const tbody=document.querySelector('#tabDemo tbody'); tbody.innerHTML=''; const ym = demoMes.value || new Date().toISOString().slice(0,7); const arr = state.lanc.filter(x=> x.data?.startsWith(ym));
-      const centers = state.centros.map(c=> ({...c}));
-      const totals = arr.reduce((acc,x)=>{ const c=x.centro||'Geral'; if(!acc[c]) acc[c]={rec:0,desp:0}; if(x.natureza==='RO'||x.natureza==='RNO') acc[c].rec += x.valor; else acc[c].desp += x.valor; return acc; },{});
-      const geral = totals['Geral'] || {rec:0, desp:0};
-      const base = centers.filter(c=> c.nome!=='Geral' && c.area>0);
-      const somaArea = base.reduce((s,c)=> s+c.area,0) || 0;
-      centers.forEach(c=>{
-        const own = totals[c.nome] || {rec:0, desp:0};
-        let rec = own.rec, desp = own.desp;
-        if(c.nome!=='Geral' && somaArea>0){ const share = c.area / somaArea; rec += geral.rec * share; desp += geral.desp * share; }
-        const tr=document.createElement('tr'); tr.innerHTML=`<td>${c.nome}</td><td>${(c.area||0).toLocaleString('pt-BR')}</td><td>${BRL.format(rec)}</td><td>${BRL.format(desp)}</td><td style='font-weight:700'>${BRL.format(rec-desp)}</td>`; tbody.appendChild(tr);
+    function renderCentros(){
+      const tbody=tabCentrosBody();
+      tbody.innerHTML='';
+      state.centros.forEach((c,idx)=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td>${c.nome}</td><td><input type="number" min="0" step="0.01" value="${c.area}" onchange="updArea(${idx}, this.value)"/></td><td style="text-align:right">${c.nome!=='Geral'?`<button class='danger' onclick='delCentro(${idx})'>Remover</button>`:''}</td>`;
+        tbody.appendChild(tr);
       });
     }
+    window.updArea = (idx,val)=>{
+      state.centros[idx].area = Number(val)||0;
+      persist();
+    }
+    window.delCentro = (idx)=>{
+      if(!confirm('Remover este centro?')) return;
+      const nome=state.centros[idx].nome;
+      if(nome==='Geral') return alert('Não é permitido remover "Geral".');
+      state.centros.splice(idx,1);
+      persist(); renderCentros(); fillCentros();
+    }
+    document.getElementById('addCentro').addEventListener('click', ()=>{
+      const nome=document.getElementById('novoCentro').value.trim();
+      const area=Number(document.getElementById('novoCentroArea').value)||0;
+      if(!nome) return alert('Informe o nome do centro');
+      if(state.centros.some(c=>c.nome.toLowerCase()===nome.toLowerCase())) return alert('Centro já existe.');
+      state.centros.push({nome, area});
+      document.getElementById('novoCentro').value='';
+      document.getElementById('novoCentroArea').value='';
+      persist(); renderCentros(); fillCentros();
+    });
+    document.getElementById('apagarTudo').addEventListener('click', ()=>{
+      if(!confirm('Excluir TODOS os dados de teste?')) return;
+      state.lanc=[];
+      state.centros=[];
+      state.areaTotal=0;
+      state.tax=null;
+      persist(); location.reload();
+    });
+
+    // ===== Demonstrativos: Safra/Ano com filtro de centro e IR =====
+    // Preenche seletor de centro para demonstrativo
+    function fillDemoCentro(){
+      const sel=document.getElementById('demoCentro');
+      if(!sel) return;
+      sel.innerHTML='';
+      const optAll=document.createElement('option');
+      optAll.value='Todos';
+      optAll.textContent='Todos';
+      sel.appendChild(optAll);
+      state.centros.forEach(c=>{
+        const o=document.createElement('option');
+        o.value=c.nome;
+        o.textContent=c.nome;
+        sel.appendChild(o);
+      });
+    }
+    // Função que define período corrente a partir das opções Safra/Ano e ano base
+    function currentPeriod(){
+      const y = Number(document.getElementById('demoSafra').value || new Date().getFullYear());
+      const tipo = document.getElementById('demoTipo').value;
+      if(tipo === 'safra'){
+        return { start:`${y}-08-01`, end:`${y+1}-07-31`, irOnly:false };
+      } else {
+        return { start:`${y}-01-01`, end:`${y}-12-31`, irOnly: !!document.getElementById('demoIrOnly').checked };
+      }
+    }
+    // Atualiza labels conforme tipo de demonstrativo
+    function onTipoChange(){
+      const tipo=document.getElementById('demoTipo').value;
+      const lblPeriodo=document.getElementById('lblPeriodo');
+      const helpPeriodo=document.getElementById('helpPeriodo');
+      const wrapIr=document.getElementById('wrapIr');
+      if(tipo==='safra'){
+        lblPeriodo.textContent='Safra (agosto a julho)';
+        helpPeriodo.textContent='Ex.: 2024 — considera 01/08/2024 a 31/07/2025';
+        wrapIr.style.display='none';
+      } else {
+        lblPeriodo.textContent='Ano (janeiro a dezembro)';
+        helpPeriodo.textContent='Ex.: 2024 — considera 01/01/2024 a 31/12/2024';
+        wrapIr.style.display='inline-flex';
+      }
+      renderDemo();
+    }
+    // Define ano base padrão para safra/ano (safra corrente)
+    function setupDemoDefaults(){
+      const now=new Date();
+      // se estivermos depois de julho (mês 7), safra inicia no ano atual; caso contrário, ano anterior
+      const safraYear = (now.getMonth()>=7) ? now.getFullYear() : now.getFullYear()-1;
+      document.getElementById('demoTipo').value='safra';
+      document.getElementById('demoSafra').value=String(safraYear);
+      document.getElementById('wrapIr').style.display='none';
+    }
+    // Renderiza a tabela de demonstrativo com colunas mensais e total
+    function renderDemo(){
+      const tbody=document.querySelector('#tabDemo tbody');
+      const thead=document.getElementById('demoHeader');
+      tbody.innerHTML='';
+      thead.innerHTML='';
+      const {start,end,irOnly} = currentPeriod();
+      // monta array de meses entre start e end
+      const months=[];
+      let d=new Date(start + 'T00:00:00'); d.setDate(1);
+      const endDate=new Date(end + 'T00:00:00'); endDate.setDate(1);
+      while(d<=endDate){ months.push(new Date(d)); d.setMonth(d.getMonth()+1); }
+      // monta cabeçalho
+      const monthNames=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      let headerHtml='<th>Centro</th>';
+      months.forEach(m => {
+        headerHtml += `<th>${monthNames[m.getMonth()]}/${String(m.getFullYear()).slice(-2)}</th>`;
+      });
+      headerHtml += '<th>Total</th>';
+      thead.innerHTML=headerHtml;
+      // filtra lançamentos do período
+      let arr=state.lanc.filter(x=> x.data && x.data>=start && x.data<=end);
+      if(irOnly){ arr=arr.filter(x=> x.ir===true); }
+      // centros a exibir
+      const centroSel=document.getElementById('demoCentro').value || 'Todos';
+      const centres=(centroSel==='Todos') ? state.centros.map(c=> c.nome) : [centroSel];
+      centres.forEach(nomeCentro => {
+        let totalNet=0;
+        let rowHtml='<td>'+nomeCentro+'</td>';
+        months.forEach(md => {
+          const ym=md.toISOString().slice(0,7);
+          let rec=0, desp=0;
+          arr.forEach(x => {
+            const cName=x.centro || 'Geral';
+            if(cName===nomeCentro && x.data.startsWith(ym)){
+              if(x.natureza==='RO' || x.natureza==='RNO') rec += x.valor; else desp += x.valor;
+            }
+          });
+          const net=rec-desp;
+          totalNet += net;
+          rowHtml += `<td>${BRL.format(net)}</td>`;
+        });
+        rowHtml += `<td style="font-weight:700">${BRL.format(totalNet)}</td>`;
+        tbody.innerHTML += `<tr>${rowHtml}</tr>`;
+      });
+    }
+    // Eventos do demonstrativo
+    document.getElementById('demoTipo').addEventListener('change', onTipoChange);
+    document.getElementById('demoSafra').addEventListener('input', renderDemo);
+    document.getElementById('demoIrOnly').addEventListener('change', renderDemo);
+    document.getElementById('demoCentro').addEventListener('change', renderDemo);
+    document.getElementById('areaTotal').addEventListener('input', (e)=>{
+      state.areaTotal = Number(e.target.value)||0;
+      persist(); renderDemo();
+    });
 
     // ===== Exportar / Importar CSV =====
-    document.getElementById('exportCsv').addEventListener('click', ()=>{ const header=['id','data','natureza','conta','categoria','descricao','centro','pagamento','ir','valor']; const rows=state.lanc.map(x=> header.map(h=>{ const v=x[h]??''; return typeof v==='number'? String(v).replace('.',',') : String(v).replace(/\"/g,'""'); })); const csv=[header.join(';')].concat(rows.map(r=> r.join(';'))).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='sinuelo_finance.csv'; a.click(); });
+    document.getElementById('exportCsv').addEventListener('click', ()=>{
+      const header=['id','data','natureza','conta','categoria','descricao','centro','pagamento','ir','valor'];
+      const rows=state.lanc.map(x=> header.map(h=>{
+        const v=x[h]??'';
+        return typeof v==='number'? String(v).replace('.',',') : String(v).replace(/"/g,'""');
+      }));
+      const csv=[header.join(';')].concat(rows.map(r=> r.join(';'))).join('\n');
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='sinuelo_finance.csv';
+      a.click();
+    });
     document.getElementById('importCsvBtn').addEventListener('click', ()=> document.getElementById('importCsv').click());
-    document.getElementById('importCsv').addEventListener('change', (e)=>{ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ const lines=reader.result.split(/\r?\n/).filter(Boolean); const header=lines.shift().split(';'); const idx=(name)=> header.indexOf(name); const arr=lines.map(l=>{ const c=l.split(';'); return { id:c[idx('id')]||crypto.randomUUID(), data:c[idx('data')], natureza:c[idx('natureza')]||c[idx('tipo')], conta:c[idx('conta')], categoria:c[idx('categoria')], descricao:c[idx('descricao')], centro:c[idx('centro')], pagamento:c[idx('pagamento')], ir: ((c[idx('ir')]||'').toLowerCase()=='true' || c[idx('ir')]=='1'), valor:parseBR(c[idx('valor')]||'0') }; }); state.lanc=arr.concat(state.lanc); persist(); updateKPIs(); alert('Importado! Abra o Extrato/Demonstrativos para conferir.'); }; reader.readAsText(file,'utf-8'); });
+    document.getElementById('importCsv').addEventListener('change', (e)=>{
+      const file=e.target.files[0];
+      if(!file) return;
+      const reader=new FileReader();
+      reader.onload=()=>{
+        const lines=reader.result.split(/\r?\n/).filter(Boolean);
+        const header=lines.shift().split(';');
+        const idx=(name)=> header.indexOf(name);
+        const arr=lines.map(l=>{
+          const c=l.split(';');
+          return {
+            id:c[idx('id')]||crypto.randomUUID(),
+            data:c[idx('data')],
+            natureza:c[idx('natureza')]||c[idx('tipo')],
+            conta:c[idx('conta')],
+            categoria:c[idx('categoria')],
+            descricao:c[idx('descricao')],
+            centro:c[idx('centro')],
+            pagamento:c[idx('pagamento')],
+            ir: ((c[idx('ir')]||'').toLowerCase()=='true' || c[idx('ir')]=='1'),
+            valor: parseBR(c[idx('valor')]||'0')
+          };
+        });
+        state.lanc=arr.concat(state.lanc);
+        persist(); updateKPIs();
+        alert('Importado! Abra o Extrato/Demonstrativos para conferir.');
+      };
+      reader.readAsText(file,'utf-8');
+    });
 
     // ===== Inicialização =====
     document.getElementById('ano').textContent = new Date().getFullYear();
     document.getElementById('data').value = new Date().toISOString().slice(0,10);
-    // removido: controle de mês substituído por período Safra/Ano
-    // Filtros
-    const filtroNaturezaSel = document.getElementById('filtroNatureza'); filtroNaturezaSel.innerHTML = '<option value="">Todas</option>';
-    TAX_DEFAULT.forEach(n=>{ const o=document.createElement('option'); o.value=n.code; o.textContent=`${n.code} — ${n.nome}`; filtroNaturezaSel.appendChild(o); });
-    // Form
-    fillNatureza(); fillContas(); fillCentros(); updateKPIs(); renderPlanoContas(); renderCentros();
+    // Preenche filtros
+    const filtroNaturezaSel = document.getElementById('filtroNatureza');
+    filtroNaturezaSel.innerHTML = '<option value="">Todas</option>';
+    state.tax.forEach(n=>{
+      const o=document.createElement('option');
+      o.value=n.code;
+      o.textContent=`${n.code} — ${n.nome}`;
+      filtroNaturezaSel.appendChild(o);
+    });
+    // Preenche seletores iniciais e KPIs
+    fillNatureza(); fillContas(); fillCentros(); fillDemoCentro();
+    setupDemoDefaults();
+    updateKPIs();
+    renderPlanoContas();
+    renderCentros();
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
