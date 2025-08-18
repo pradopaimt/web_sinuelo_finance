@@ -1,5 +1,5 @@
 // Nome do cache (troque a versão quando fizer alterações importantes)
-const CACHE_NAME = "sinuelo-cache-v1";
+const CACHE_NAME = "sinuelo-cache-v12";
 
 // Lista de arquivos para pré-cache
 const ASSETS = [
