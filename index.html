@@ -370,11 +370,15 @@
     const fmtDate = (iso)=> new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR');
 
     // ===== Estado =====
+    // Base URL da API backend (FastAPI). Ajuste se o serviço rodar em outra porta/host.
+    const API_BASE = 'http://localhost:8000';
+
+    // Estado da aplicação. Os dados serão carregados da API ao invés de localStorage.
     const state = {
-      lanc: JSON.parse(localStorage.getItem('sinuelo_lanc')||'[]'),
-      centros: JSON.parse(localStorage.getItem('sinuelo_centros')||'[]'),
-      areaTotal: Number(localStorage.getItem('sinuelo_area_total')||'0'),
-      tax: JSON.parse(localStorage.getItem('sinuelo_tax')||'null')
+      lanc: [],      // lançamentos carregados do backend
+      centros: [],   // centros de custo carregados do backend
+      tax: [],       // estrutura de natureza→conta→categoria carregada do backend
+      areaTotal: 0   // área total da fazenda (ajustável no front, não persistido no backend)
     };
 
     // Migração antigo -> novo (caso existam campos 'tipo')
@@ -410,22 +414,117 @@
       ]}
     ];
 
-    // Inicializa state.tax se ainda não existir ou estiver vazio
-    if(!Array.isArray(state.tax) || state.tax.length===0){
-      state.tax = JSON.parse(JSON.stringify(TAX_DEFAULT));
-      persist();
-    }
-
-    // Centros default (adiciona se lista vazia)
-    if(state.centros.length === 0){ state.centros = [ {nome:'Geral', area:0}, {nome:'Soja', area:0}, {nome:'Bovinos', area:0}, {nome:'Ovinos', area:0} ]; persist(); }
+    // Não carregamos dados de naturezas, contas, categorias ou centros a partir de localStorage.
+    // Eles serão buscados do backend durante a inicialização via funções assíncronas (ver loadData()).
 
     // ===== Persistência =====
+    // No modo com backend, não persistimos mais em localStorage. Esta função é mantida para compatibilidade
+    // porém apenas atualiza areaTotal em localStorage para não perder a configuração ao recarregar.
     function persist(){
-      localStorage.setItem('sinuelo_lanc', JSON.stringify(state.lanc));
-      localStorage.setItem('sinuelo_centros', JSON.stringify(state.centros));
       localStorage.setItem('sinuelo_area_total', String(state.areaTotal||0));
-      localStorage.setItem('sinuelo_tax', JSON.stringify(state.tax));
     }
+
+    // ===== Funções de acesso à API =====
+    // Busca lista de naturezas e, para cada uma, suas contas e categorias. Armazena em state.tax
+    async function fetchNaturezas(){
+      // Carrega naturezas, contas e categorias do backend.
+      // Para cada natureza obtém suas contas e, para cada conta, suas categorias.
+      try{
+        const res = await fetch(`${API_BASE}/naturezas`);
+        const list = await res.json();
+        state.tax = [];
+        for(const nat of list){
+          // Buscar contas desta natureza
+          const res2 = await fetch(`${API_BASE}/naturezas/${nat.code}/contas`);
+          const contas = await res2.json();
+          const contObjs = [];
+          for(const acc of contas){
+            // Buscar categorias da conta
+            let cats = [];
+            try{
+              const res3 = await fetch(`${API_BASE}/contas/${acc.id}/categorias`);
+              cats = await res3.json();
+            }catch(e){ cats = []; }
+            contObjs.push({
+              id: acc.id,
+              nome: acc.nome,
+              cats: cats.map(cat => cat.nome),
+              cats_full: cats.map(cat => ({ id: cat.id, nome: cat.nome }))
+            });
+          }
+          state.tax.push({
+            code: nat.code,
+            nome: nat.nome,
+            contas: contObjs
+          });
+        }
+      } catch(err){ console.error('Erro ao carregar naturezas', err); }
+    }
+    // Busca lista de centros de custo e armazena em state.centros
+    async function fetchCentros(){
+      try{
+        const res = await fetch(`${API_BASE}/centros`);
+        const list = await res.json();
+        state.centros = list.map(c=>({ id:c.id, nome:c.nome, area:c.area||0 }));
+      }catch(err){ console.error('Erro ao carregar centros', err); }
+    }
+    // Busca lista de lançamentos do backend e armazena em state.lanc
+    async function fetchLancamentos(){
+      try{
+        const res = await fetch(`${API_BASE}/lancamentos`);
+        const list = await res.json();
+        state.lanc = list.map(item => ({
+          id: item.id,
+          data: item.data,
+          natureza: item.natureza_code,
+          conta: item.conta_nome,
+          categoria: item.categoria_nome,
+          centro: item.centro_nome,
+          pagamento: item.pagamento,
+          descricao: item.descricao,
+          ir: item.ir,
+          valor: item.valor,
+          anexoNome: item.anexoNome
+        }));
+      }catch(err){ console.error('Erro ao carregar lançamentos', err); }
+    }
+    // Envia lançamento ao backend e retorna registro salvo. Converte id de conta/categoria/centro.
+    async function postLancamento(item){
+      try{
+        const res = await fetch(`${API_BASE}/lancamentos`, {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify(item)
+        });
+        return await res.json();
+      }catch(err){ console.error('Erro ao salvar lançamento', err); }
+    }
+    // Remove lançamento no backend
+    async function removeLancamento(id){
+      try{
+        await fetch(`${API_BASE}/lancamentos/${id}`, { method:'DELETE' });
+      }catch(err){ console.error('Erro ao excluir lançamento', err); }
+    }
+    // Carrega todos os dados iniciais da API e prepara UI
+    async function loadData(){
+      await fetchNaturezas();
+      await fetchCentros();
+      await fetchLancamentos();
+      // Após carregar dados, preencher selects e renderizações
+      fillNatureza(); fillContas(); fillCentros(); fillDemoCentro();
+      setupDemoDefaults(); updateKPIs(); renderPlanoContas(); renderCentros();
+      // Preencher filtro de natureza no extrato
+      const filtroNaturezaSel = document.getElementById('filtroNatureza');
+      filtroNaturezaSel.innerHTML = '<option value="">Todas</option>';
+      state.tax.forEach(n=>{
+        const o=document.createElement('option');
+        o.value=n.code;
+        o.textContent=`${n.code} — ${n.nome}`;
+        filtroNaturezaSel.appendChild(o);
+      });
+    }
+    // Inicia carregamento ao abrir a página
+    window.addEventListener('DOMContentLoaded', loadData);
 
     // ===== UI Helpers (Plano de Contas) =====
     const elNat = document.getElementById('natureza');
@@ -473,26 +572,56 @@
       e.target.value = num.replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     });
 
-    document.getElementById('formLanc').addEventListener('submit', (e)=>{
+    document.getElementById('formLanc').addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const item = {
-        id: crypto.randomUUID(),
-        data: elForm.data.value || new Date().toISOString().slice(0,10),
-        natureza: elNat.value,
-        conta: elConta.value||'',
-        categoria: elCat.value||'',
-        centro: elCentro.value||'Geral',
+      // Montar objeto para API: converter nomes para IDs
+      const dataStr = elForm.data.value || new Date().toISOString().slice(0,10);
+      const natCode = elNat.value;
+      const accName = elConta.value||'';
+      const catName = elCat.value||'';
+      const centreName = elCentro.value||'Geral';
+      // Encontrar IDs correspondentes
+      const nat = state.tax.find(n => n.code === natCode);
+      const acc = nat?.contas.find(c => c.nome === accName);
+      const cat = acc?.cats_full.find(cat => cat.nome === catName);
+      const centre = state.centros.find(c => c.nome === centreName);
+      const payload = {
+        data: dataStr,
+        natureza_code: natCode,
+        conta_id: acc ? acc.id : null,
+        categoria_id: cat ? cat.id : null,
+        centro_id: centre ? centre.id : null,
         pagamento: elForm.pagamento.value||'',
         descricao: elForm.descricao.value||'',
         ir: !!elForm.ir?.checked,
         valor: parseBR(elForm.valor.value),
         anexoNome: elForm.anexo.files[0]?.name || null
       };
-      state.lanc.unshift(item);
-      persist();
-      document.getElementById('formLanc').reset();
-      fillNatureza(); fillContas(); fillCentros(); updateKPIs();
-      alert('Lançamento salvo!');
+      // Enviar ao backend
+      const saved = await postLancamento(payload);
+      if(saved){
+        // Adicionar ao estado local (mapeando nomes)
+        state.lanc.unshift({
+          id: saved.id,
+          data: saved.data,
+          natureza: saved.natureza_code,
+          conta: saved.conta_nome,
+          categoria: saved.categoria_nome,
+          centro: saved.centro_nome,
+          pagamento: saved.pagamento,
+          descricao: saved.descricao,
+          ir: saved.ir,
+          valor: saved.valor,
+          anexoNome: saved.anexoNome
+        });
+        updateKPIs();
+        // limpar formulário e preencher seletores novamente
+        document.getElementById('formLanc').reset();
+        fillNatureza(); fillContas(); fillCentros(); fillDemoCentro();
+        alert('Lançamento salvo!');
+      } else {
+        alert('Erro ao salvar lançamento.');
+      }
     });
     document.getElementById('limpar').addEventListener('click', ()=>{
       document.getElementById('formLanc').reset(); fillNatureza(); fillContas();
@@ -534,9 +663,17 @@
         tbody.appendChild(tr);
       });
     }
-    window.editar = (id)=>{
+    // Ao editar, remova o lançamento antigo (do backend e local) e preencha o formulário com seus dados
+    window.editar = async (id)=>{
       const x=state.lanc.find(i=>i.id===id);
       if(!x) return;
+      // Excluir no backend
+      await removeLancamento(id);
+      // Remover do estado local
+      state.lanc=state.lanc.filter(i=> i.id!==id);
+      updateKPIs();
+      renderTabela();
+      // Navegar para a aba de lançamentos e preencher o formulário para edição
       document.querySelector('[data-tab="lancamentos"]').click();
       elForm.data.value=x.data;
       elNat.value=x.natureza;
@@ -550,13 +687,14 @@
       elForm.pagamento.value=x.pagamento;
       elForm.descricao.value=x.descricao;
       elForm.ir.checked=!!x.ir;
-      state.lanc=state.lanc.filter(i=>i.id!==id);
-      persist(); updateKPIs();
     }
-    window.excluir = (id)=>{
+    // Ao excluir, remova no backend e atualize listas locais
+    window.excluir = async (id)=>{
       if(!confirm('Excluir este lançamento?')) return;
+      await removeLancamento(id);
       state.lanc=state.lanc.filter(i=>i.id!==id);
-      persist(); renderTabela(); updateKPIs();
+      updateKPIs();
+      renderTabela();
     }
 
     // ===== Plano de Contas (visual + CRUD de contas e categorias) =====
