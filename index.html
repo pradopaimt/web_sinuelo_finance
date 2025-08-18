@@ -825,6 +825,8 @@
       });
       // Agora atualiza resumos agregados usando os lançamentos filtrados
       renderSummary(arr);
+      // Renderiza resumo hierárquico por natureza, conta e categoria
+      renderDrillSummary(arr);
     }
 
     // Calcula e preenche resumos por natureza, conta e categoria
@@ -893,6 +895,160 @@
           const perc=(totalNet!==0) ? ((net/totalNet)*100) : 0;
           tbodyCat.innerHTML += `<tr><td>${key}</td><td>${BRL.format(rec)}</td><td>${BRL.format(desp)}</td><td>${BRL.format(net)}</td><td>${perc.toFixed(1)}%</td></tr>`;
         });
+      }
+    }
+
+    // === Resumo hierárquico por Natureza / Conta / Categoria ===
+    let drillHierarchy = {};
+    let drillTotalNet = 0;
+    function renderDrillSummary(arr){
+      // Construir hierarquia e calcular totais gerais
+      drillHierarchy = {};
+      let totalRec=0;
+      let totalDesp=0;
+      arr.forEach(x => {
+        const nat = x.natureza;
+        if(!drillHierarchy[nat]){
+          drillHierarchy[nat] = {rec:0, desp:0, net:0, accounts:{}};
+        }
+        // atualizar totals
+        if(nat==='RO' || nat==='RNO'){
+          drillHierarchy[nat].rec += x.valor;
+          totalRec += x.valor;
+        } else {
+          drillHierarchy[nat].desp += x.valor;
+          totalDesp += x.valor;
+        }
+        // conta
+        const acc = x.conta || '(sem conta)';
+        if(!drillHierarchy[nat].accounts[acc]){
+          drillHierarchy[nat].accounts[acc] = {rec:0, desp:0, net:0, categories:{}};
+        }
+        if(nat==='RO' || nat==='RNO'){
+          drillHierarchy[nat].accounts[acc].rec += x.valor;
+        } else {
+          drillHierarchy[nat].accounts[acc].desp += x.valor;
+        }
+        // categoria
+        const cat = x.categoria || '(sem categoria)';
+        if(!drillHierarchy[nat].accounts[acc].categories[cat]){
+          drillHierarchy[nat].accounts[acc].categories[cat] = {rec:0, desp:0, net:0};
+        }
+        if(nat==='RO' || nat==='RNO'){
+          drillHierarchy[nat].accounts[acc].categories[cat].rec += x.valor;
+        } else {
+          drillHierarchy[nat].accounts[acc].categories[cat].desp += x.valor;
+        }
+      });
+      // calcular nets
+      Object.keys(drillHierarchy).forEach(nKey => {
+        const n = drillHierarchy[nKey];
+        n.net = n.rec - n.desp;
+        Object.keys(n.accounts).forEach(accKey => {
+          const a = n.accounts[accKey];
+          a.net = a.rec - a.desp;
+          Object.keys(a.categories).forEach(catKey => {
+            const c = a.categories[catKey];
+            c.net = c.rec - c.desp;
+          });
+        });
+      });
+      drillTotalNet = totalRec - totalDesp;
+      // atualizar sumário total
+      const sumDiv = document.getElementById('summaryTotals');
+      if(sumDiv){
+        sumDiv.innerHTML = `<strong>Receita Total:</strong> ${BRL.format(totalRec)} &nbsp; <strong>Despesa Total:</strong> ${BRL.format(totalDesp)} &nbsp; <strong>Resultado:</strong> ${BRL.format(drillTotalNet)}`;
+      }
+      // preencher linhas iniciais (naturezas)
+      const tbody = document.querySelector('#tabDrill tbody');
+      if(tbody){
+        tbody.innerHTML = '';
+        Object.keys(drillHierarchy).forEach(nKey => {
+          const n = drillHierarchy[nKey];
+          const perc = (drillTotalNet!==0) ? ((n.net/drillTotalNet)*100) : 0;
+          const tr = document.createElement('tr');
+          tr.classList.add('nature-row');
+          tr.dataset.nat = nKey;
+          tr.innerHTML = `<td>${nKey}</td><td></td><td></td><td>${BRL.format(n.rec)}</td><td>${BRL.format(n.desp)}</td><td>${BRL.format(n.net)}</td><td>${perc.toFixed(1)}%</td>`;
+          tr.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleNature(nKey);
+          });
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    function toggleNature(nKey){
+      const tbody = document.querySelector('#tabDrill tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      const nRow = rows.find(r => r.dataset.nat === nKey && !r.dataset.acc);
+      if(!nRow) return;
+      const expanded = nRow.classList.contains('expanded');
+      if(!expanded){
+        const index = rows.indexOf(nRow);
+        let offset = 1;
+        const nature = drillHierarchy[nKey];
+        Object.keys(nature.accounts).forEach(accKey => {
+          const a = nature.accounts[accKey];
+          const perc = (drillTotalNet!==0) ? ((a.net/drillTotalNet)*100) : 0;
+          const accRow = document.createElement('tr');
+          accRow.classList.add('account-row');
+          accRow.dataset.nat = nKey;
+          accRow.dataset.acc = accKey;
+          accRow.innerHTML = `<td></td><td>${accKey}</td><td></td><td>${BRL.format(a.rec)}</td><td>${BRL.format(a.desp)}</td><td>${BRL.format(a.net)}</td><td>${perc.toFixed(1)}%</td>`;
+          accRow.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleAccount(nKey, accKey);
+          });
+          tbody.insertBefore(accRow, rows[index+offset] || null);
+          offset++;
+        });
+        nRow.classList.add('expanded');
+      } else {
+        // collapse: remove all rows until the next nature row (dataset.nat && no dataset.acc)
+        let next = nRow.nextSibling;
+        while(next && !(next.dataset.nat && !next.dataset.acc)){
+          const toRemove = next;
+          next = next.nextSibling;
+          toRemove.remove();
+        }
+        nRow.classList.remove('expanded');
+      }
+    }
+
+    function toggleAccount(nKey, accKey){
+      const tbody = document.querySelector('#tabDrill tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      const accRow = rows.find(r => r.dataset.nat === nKey && r.dataset.acc === accKey && !r.dataset.cat);
+      if(!accRow) return;
+      const expanded = accRow.classList.contains('expanded');
+      if(!expanded){
+        const index = rows.indexOf(accRow);
+        let offset = 1;
+        const cats = drillHierarchy[nKey].accounts[accKey].categories;
+        Object.keys(cats).forEach(catKey => {
+          const c = cats[catKey];
+          const perc = (drillTotalNet!==0) ? ((c.net/drillTotalNet)*100) : 0;
+          const catRow = document.createElement('tr');
+          catRow.classList.add('category-row');
+          catRow.dataset.nat = nKey;
+          catRow.dataset.acc = accKey;
+          catRow.dataset.cat = catKey;
+          catRow.innerHTML = `<td></td><td></td><td>${catKey}</td><td>${BRL.format(c.rec)}</td><td>${BRL.format(c.desp)}</td><td>${BRL.format(c.net)}</td><td>${perc.toFixed(1)}%</td>`;
+          tbody.insertBefore(catRow, rows[index+offset] || null);
+          offset++;
+        });
+        accRow.classList.add('expanded');
+      } else {
+        // collapse categories: remove consecutive category rows
+        let next = accRow.nextSibling;
+        while(next && next.dataset.acc === accKey && next.dataset.cat){
+          const toRemove = next;
+          next = next.nextSibling;
+          toRemove.remove();
+        }
+        accRow.classList.remove('expanded');
       }
     }
     // Eventos do demonstrativo
