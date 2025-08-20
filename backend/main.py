@@ -25,16 +25,20 @@ import sqlite3
 import os
 import pathlib
 
+DB_DIR = os.environ.get("SINUELO_DB_DIR", "/data")
+os.makedirs(DB_DIR, exist_ok=True)
 DB_NAME = os.environ.get("SINUELO_DB_NAME", "sinuelo.db")
+DB_PATH = os.path.join(DB_DIR, DB_NAME)
 
 # Router for API endpoints, prefixing all routes with /api
 api = APIRouter(prefix="/api")
 
 def get_connection() -> sqlite3.Connection:
-    """Open a connection to the SQLite database with foreign keys enabled."""
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(DB_PATH, timeout=30, isolation_level=None)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
+    # (opcional) melhora concorrência no Fly:
+    conn.execute("PRAGMA journal_mode=WAL")
     return conn
 
 def init_db() -> None:
@@ -80,25 +84,25 @@ def init_db() -> None:
         """
     )
     cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS lancamento (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            data TEXT NOT NULL,
-            natureza_code TEXT NOT NULL,
-            conta_id INTEGER,
-            categoria_id INTEGER,
-            centro_id INTEGER,
-            pagamento TEXT,
-            descricao TEXT,
-            ir INTEGER NOT NULL DEFAULT 0,
-            valor REAL NOT NULL,
-            anexo_nome TEXT,
-            FOREIGN KEY(natureza_code) REFERENCES natureza(code) ON DELETE SET NULL,
-            FOREIGN KEY(conta_id) REFERENCES conta(id) ON DELETE SET NULL,
-            FOREIGN KEY(categoria_id) REFERENCES categoria(id) ON DELETE SET NULL,
-            FOREIGN KEY(centro_id) REFERENCES centro(id) ON DELETE SET NULL
-        )
-        """
+     """
+    CREATE TABLE IF NOT EXISTS lancamento (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        data TEXT NOT NULL,
+        natureza_code TEXT NOT NULL,
+        conta_id INTEGER,
+        categoria_id INTEGER,
+        centro_id INTEGER,
+        pagamento TEXT,
+        descricao TEXT,
+        ir INTEGER NOT NULL DEFAULT 0,
+        valor REAL NOT NULL,
+        anexo_nome TEXT,
+        FOREIGN KEY(natureza_code) REFERENCES natureza(code) ON DELETE RESTRICT,
+        FOREIGN KEY(conta_id) REFERENCES conta(id) ON DELETE SET NULL,
+        FOREIGN KEY(categoria_id) REFERENCES categoria(id) ON DELETE SET NULL,
+        FOREIGN KEY(centro_id) REFERENCES centro(id) ON DELETE SET NULL
+    )
+    """
     )
 
     # Check if naturezas already exist; if not, seed default taxonomy
@@ -355,7 +359,9 @@ class CategoriaOut(BaseModel):
     id: int
     conta_id: int
     nome: str
-
+class CentroIn(BaseModel):
+    nome: str
+    area: float = 0
 class CentroOut(BaseModel):
     id: int
     nome: str
@@ -470,7 +476,7 @@ def list_centros() -> List[CentroOut]:
     return rows
 
 @api.post("/centros", response_model=CentroOut)
-def create_centro(centro: CentroOut) -> CentroOut:
+def create_centro(centro: CentroIn) -> CentroOut:
     conn = get_connection()
     cur = conn.cursor()
     try:
@@ -483,7 +489,6 @@ def create_centro(centro: CentroOut) -> CentroOut:
     except sqlite3.IntegrityError:
         conn.close()
         raise HTTPException(status_code=400, detail="Centro already exists")
-    # Return the created centre
     created = CentroOut(id=centro_id, nome=centro.nome, area=centro.area)
     conn.close()
     return created

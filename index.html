@@ -379,10 +379,6 @@
     const fmtDate = (iso)=> new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR');
 
     // ===== Estado =====
-    // Base URL da API backend (FastAPI). Ajuste se o serviço rodar em outra porta/host.
-    const API_BASE = 'http://127.0.0.1:8000';
-	const USE_API  = true; 
-	
     // Estado da aplicação. Os dados serão carregados da API ao invés de localStorage.
     const state = {
       lanc: [],      // lançamentos carregados do backend
@@ -479,36 +475,63 @@
       }catch(err){ console.error('Erro ao carregar centros', err); }
     }
     // Busca lista de lançamentos do backend e armazena em state.lanc
-    async function fetchLancamentos(){
-      try{
-        const res = await fetch(window.API_BASE+`/lancamentos`);
-        const list = await res.json();
-        state.lanc = list.map(item => ({
-          id: item.id,
-          data: item.data,
-          natureza: item.natureza_code,
-          conta: item.conta_nome,
-          categoria: item.categoria_nome,
-          centro: item.centro_nome,
-          pagamento: item.pagamento,
-          descricao: item.descricao,
-          ir: item.ir,
-          valor: item.valor,
-          anexoNome: item.anexoNome
-        }));
-      }catch(err){ console.error('Erro ao carregar lançamentos', err); }
-    }
+async function fetchLancamentos() {
+  try {
+    const res = await fetch(window.API_BASE + `/lancamentos`);
+    const list = await res.json();
+    state.lanc = list.map(item => {
+      // procurar o nome da conta/categoria no state.tax usando os IDs retornados
+      const nat = state.tax.find(n => n.code === item.natureza_code);
+      const acc = nat?.contas.find(c => c.id === item.conta_id);
+      const cat = acc?.cats_full.find(c => c.id === item.categoria_id);
+      const centro = state.centros.find(c => c.id === item.centro_id);
+      return {
+        id: item.id,
+        data: item.data,
+        natureza: item.natureza_code,
+        conta: acc?.nome || '',
+        categoria: cat?.nome || '',
+        centro: centro?.nome || '',
+        pagamento: item.pagamento,
+        descricao: item.descricao,
+        ir: item.ir,
+        valor: item.valor,
+        anexoNome: item.anexo_nome // esta propriedade no backend é anexo_nome
+      };
+    });
+  } catch(err){ console.error('Erro ao carregar lançamentos', err); }
+}
+
     // Envia lançamento ao backend e retorna registro salvo. Converte id de conta/categoria/centro.
     async function postLancamento(item){
-      try{
-        const res = await fetch(window.API_BASE+`/lancamentos`, {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify(item)
-        });
-        return await res.json();
-      }catch(err){ console.error('Erro ao salvar lançamento', err); }
+  try{
+    const payload = {
+      data: item.data,
+      natureza_code: item.natureza_code,
+      conta_id: item.conta_id ?? null,
+      categoria_id: item.categoria_id ?? null,
+      centro_id: item.centro_id ?? null,
+      pagamento: item.pagamento ?? '',
+      descricao: item.descricao ?? '',
+      ir: !!item.ir,
+      valor: item.valor,
+      anexo_nome: item.anexoNome ?? null, // <- nome certo pro backend
+    };
+    const res = await fetch(window.API_BASE + `/lancamentos`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok){
+      const errTxt = await res.text();
+      throw new Error(errTxt || `HTTP ${res.status}`);
     }
+    return await res.json();
+  }catch(err){
+    console.error('Erro ao salvar lançamento', err);
+    return null;
+  }
+}
     // Remove lançamento no backend
     async function removeLancamento(id){
       try{
@@ -610,19 +633,25 @@
       // Enviar ao backend
       const saved = await postLancamento(payload);
       if(saved){
-        // Adicionar ao estado local (mapeando nomes)
-        state.lanc.unshift({
-          id: saved.id,
-          data: saved.data,
-          natureza: saved.natureza_code,
-          conta: saved.conta_nome,
-          categoria: saved.categoria_nome,
-          centro: saved.centro_nome,
-          pagamento: saved.pagamento,
-          descricao: saved.descricao,
-          ir: saved.ir,
-          valor: saved.valor,
-          anexoNome: saved.anexoNome
+  const nat = state.tax.find(n => n.code === saved.natureza_code);
+  const acc = nat?.contas.find(c => c.id === saved.conta_id);
+  const cat = acc?.cats_full.find(c => c.id === saved.categoria_id);
+  const centre = state.centros.find(c => c.id === saved.centro_id);
+
+  state.lanc.unshift({
+    id: saved.id,
+    data: saved.data,
+    natureza: saved.natureza_code,
+    conta: acc?.nome || '',
+    categoria: cat?.nome || '',
+    centro: centre?.nome || '',
+    pagamento: saved.pagamento,
+    descricao: saved.descricao,
+    ir: saved.ir,
+    valor: saved.valor,
+    anexoNome: saved.anexo_nome || null,
+  });
+  // ...
         });
         updateKPIs();
         // limpar formulário e preencher seletores novamente
