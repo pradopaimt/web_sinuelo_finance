@@ -26,10 +26,11 @@ from pydantic import BaseModel, Field
 import sqlite3
 import os
 
-
 DB_NAME = os.environ.get("SINUELO_DB_NAME", "sinuelo.db")
 
+# Router for API endpoints, prefixing all routes with /api
 api = APIRouter(prefix="/api")
+
 
 def get_connection() -> sqlite3.Connection:
     """Open a connection to the SQLite database with foreign keys enabled."""
@@ -429,7 +430,7 @@ def on_startup() -> None:
     init_db()
 
 
-@app.get("/naturezas", response_model=List[NaturezaOut])
+@api.get("/naturezas", response_model=List[NaturezaOut])
 def list_naturezas() -> List[NaturezaOut]:
     """Return all naturezas."""
     conn = get_connection()
@@ -440,7 +441,7 @@ def list_naturezas() -> List[NaturezaOut]:
     return rows
 
 
-@app.get("/naturezas/{code}/contas", response_model=List[ContaOut])
+@api.get("/naturezas/{code}/contas", response_model=List[ContaOut])
 def list_contas_for_natureza(code: str = Path(..., description="Natureza code")) -> List[ContaOut]:
     conn = get_connection()
     cur = conn.cursor()
@@ -458,7 +459,7 @@ def list_contas_for_natureza(code: str = Path(..., description="Natureza code"))
     return rows
 
 
-@app.get("/contas/{conta_id}/categorias", response_model=List[CategoriaOut])
+@api.get("/contas/{conta_id}/categorias", response_model=List[CategoriaOut])
 def list_categorias_for_conta(conta_id: int = Path(..., description="Conta ID")) -> List[CategoriaOut]:
     conn = get_connection()
     cur = conn.cursor()
@@ -476,7 +477,7 @@ def list_categorias_for_conta(conta_id: int = Path(..., description="Conta ID"))
     return rows
 
 
-@app.get("/centros", response_model=List[CentroOut])
+@api.get("/centros", response_model=List[CentroOut])
 def list_centros() -> List[CentroOut]:
     conn = get_connection()
     cur = conn.cursor()
@@ -486,7 +487,7 @@ def list_centros() -> List[CentroOut]:
     return rows
 
 
-@app.post("/centros", response_model=CentroOut)
+@api.post("/centros", response_model=CentroOut)
 def create_centro(centro: CentroOut) -> CentroOut:
     conn = get_connection()
     cur = conn.cursor()
@@ -506,7 +507,7 @@ def create_centro(centro: CentroOut) -> CentroOut:
     return created
 
 
-@app.post("/lancamentos", response_model=LancamentoOut, status_code=201)
+@api.post("/lancamentos", response_model=LancamentoOut, status_code=201)
 def create_lancamento(item: LancamentoIn) -> LancamentoOut:
     conn = get_connection()
     cur = conn.cursor()
@@ -556,7 +557,7 @@ def create_lancamento(item: LancamentoIn) -> LancamentoOut:
     )
 
 
-@app.get("/lancamentos", response_model=List[LancamentoOut])
+@api.get("/lancamentos", response_model=List[LancamentoOut])
 def list_lancamentos(
     start_date: Optional[str] = Query(None, description="Start date ISO YYYY-MM-DD inclusive"),
     end_date: Optional[str] = Query(None, description="End date ISO YYYY-MM-DD inclusive"),
@@ -601,7 +602,7 @@ def list_lancamentos(
     ]
 
 
-@app.delete("/lancamentos/{lanc_id}", status_code=204)
+@api.delete("/lancamentos/{lanc_id}", status_code=204)
 def delete_lancamento(lanc_id: int = Path(..., description="Lancamento ID")) -> None:
     conn = get_connection()
     cur = conn.cursor()
@@ -631,7 +632,7 @@ def _aggregate(rows: List[sqlite3.Row], key_func) -> Dict[str, Dict[str, float]]
     return result
 
 
-@app.get("/summary", response_model=SummaryOut)
+@api.get("/summary", response_model=SummaryOut)
 def get_summary(
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
@@ -697,9 +698,10 @@ def get_summary(
         by_conta=build_items(by_conta),
         by_categoria=build_items(by_cat),
     )
-    
-app.include_router(api)
-static_dir = pathlib.Path(__file__).resolve().parents[1]  # pasta raiz do projeto
-app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
-
     return summary
+
+
+# Include the API router and serve static files (index.html and assets)
+app.include_router(api)
+static_dir = pathlib.Path(__file__).resolve().parents[1]  # project root containing index.html
+app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
