@@ -17,20 +17,18 @@ that you begin with the same taxonomy that was defined in the prototype.
 """
 
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter
-from fastapi.staticfiles import StaticFiles
-import pathlib
-from fastapi import FastAPI, HTTPException, Query, Path
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Path
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 import sqlite3
 import os
+import pathlib
 
 DB_NAME = os.environ.get("SINUELO_DB_NAME", "sinuelo.db")
 
 # Router for API endpoints, prefixing all routes with /api
 api = APIRouter(prefix="/api")
-
 
 def get_connection() -> sqlite3.Connection:
     """Open a connection to the SQLite database with foreign keys enabled."""
@@ -38,7 +36,6 @@ def get_connection() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
-
 
 def init_db() -> None:
     """Create tables if they do not exist and seed default data."""
@@ -344,30 +341,25 @@ def init_db() -> None:
     conn.commit()
     conn.close()
 
-
 # Pydantic models for API responses and requests
 class NaturezaOut(BaseModel):
     code: str
     nome: str
-
 
 class ContaOut(BaseModel):
     id: int
     natureza_code: str
     nome: str
 
-
 class CategoriaOut(BaseModel):
     id: int
     conta_id: int
     nome: str
 
-
 class CentroOut(BaseModel):
     id: int
     nome: str
     area: float
-
 
 class LancamentoIn(BaseModel):
     data: str = Field(..., description="ISO date YYYY-MM-DD")
@@ -380,7 +372,6 @@ class LancamentoIn(BaseModel):
     ir: bool = False
     valor: float
     anexo_nome: Optional[str] = None
-
 
 class LancamentoOut(BaseModel):
     id: int
@@ -395,7 +386,6 @@ class LancamentoOut(BaseModel):
     valor: float
     anexo_nome: Optional[str] = None
 
-
 class SummaryItem(BaseModel):
     key: str
     receita: float
@@ -403,18 +393,15 @@ class SummaryItem(BaseModel):
     resultado: float
     percentual: float
 
-
 class SummaryOut(BaseModel):
     totals: SummaryItem
     by_natureza: List[SummaryItem]
     by_conta: List[SummaryItem]
     by_categoria: List[SummaryItem]
 
-
 app = FastAPI(title="Sinuelo Finance API")
 
-
-# Allow cross‑origin requests so the front‑end can call the API from a browser
+# Allow cross-origin requests so the front-end can call the API from a browser
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -423,13 +410,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.on_event("startup")
 def on_startup() -> None:
     """Initialize the database on startup."""
     init_db()
 
-
+# All routes are registered on the `api` router, which is prefixed with "/api"
 @api.get("/naturezas", response_model=List[NaturezaOut])
 def list_naturezas() -> List[NaturezaOut]:
     """Return all naturezas."""
@@ -439,7 +425,6 @@ def list_naturezas() -> List[NaturezaOut]:
     rows = [NaturezaOut(code=row["code"], nome=row["nome"]) for row in cur.fetchall()]
     conn.close()
     return rows
-
 
 @api.get("/naturezas/{code}/contas", response_model=List[ContaOut])
 def list_contas_for_natureza(code: str = Path(..., description="Natureza code")) -> List[ContaOut]:
@@ -458,7 +443,6 @@ def list_contas_for_natureza(code: str = Path(..., description="Natureza code"))
     conn.close()
     return rows
 
-
 @api.get("/contas/{conta_id}/categorias", response_model=List[CategoriaOut])
 def list_categorias_for_conta(conta_id: int = Path(..., description="Conta ID")) -> List[CategoriaOut]:
     conn = get_connection()
@@ -476,7 +460,6 @@ def list_categorias_for_conta(conta_id: int = Path(..., description="Conta ID"))
     conn.close()
     return rows
 
-
 @api.get("/centros", response_model=List[CentroOut])
 def list_centros() -> List[CentroOut]:
     conn = get_connection()
@@ -485,7 +468,6 @@ def list_centros() -> List[CentroOut]:
     rows = [CentroOut(id=row["id"], nome=row["nome"], area=row["area"]) for row in cur.fetchall()]
     conn.close()
     return rows
-
 
 @api.post("/centros", response_model=CentroOut)
 def create_centro(centro: CentroOut) -> CentroOut:
@@ -505,7 +487,6 @@ def create_centro(centro: CentroOut) -> CentroOut:
     created = CentroOut(id=centro_id, nome=centro.nome, area=centro.area)
     conn.close()
     return created
-
 
 @api.post("/lancamentos", response_model=LancamentoOut, status_code=201)
 def create_lancamento(item: LancamentoIn) -> LancamentoOut:
@@ -556,7 +537,6 @@ def create_lancamento(item: LancamentoIn) -> LancamentoOut:
         anexo_nome=row["anexo_nome"],
     )
 
-
 @api.get("/lancamentos", response_model=List[LancamentoOut])
 def list_lancamentos(
     start_date: Optional[str] = Query(None, description="Start date ISO YYYY-MM-DD inclusive"),
@@ -601,7 +581,6 @@ def list_lancamentos(
         for row in rows
     ]
 
-
 @api.delete("/lancamentos/{lanc_id}", status_code=204)
 def delete_lancamento(lanc_id: int = Path(..., description="Lancamento ID")) -> None:
     conn = get_connection()
@@ -610,7 +589,6 @@ def delete_lancamento(lanc_id: int = Path(..., description="Lancamento ID")) -> 
     conn.commit()
     conn.close()
     return None
-
 
 def _aggregate(rows: List[sqlite3.Row], key_func) -> Dict[str, Dict[str, float]]:
     """
@@ -630,7 +608,6 @@ def _aggregate(rows: List[sqlite3.Row], key_func) -> Dict[str, Dict[str, float]]
         else:
             result[key]["despesa"] += row["valor"]
     return result
-
 
 @api.get("/summary", response_model=SummaryOut)
 def get_summary(
@@ -699,7 +676,6 @@ def get_summary(
         by_categoria=build_items(by_cat),
     )
     return summary
-
 
 # Include the API router and serve static files (index.html and assets)
 app.include_router(api)
