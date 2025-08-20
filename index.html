@@ -8,11 +8,13 @@
   <link rel="icon" href="icons/favicon.ico" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>Agro Finance — Protótipo</title>
-  <script>
-  window.API_BASE =
-    (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-      ? 'http://127.0.0.1:8000/api'
-      : (location.origin + '/api');
+<script>
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    window.API_BASE = 'http://127.0.0.1:8000/api';
+  } else {
+    // GitHub Pages ou qualquer outro domínio → usa API do Fly
+    window.API_BASE = 'https://sinuelo-finance-api.fly.dev/api';
+  }
 </script>
 
   <!-- Estilos básicos do protótipo -->
