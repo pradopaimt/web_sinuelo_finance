@@ -17,7 +17,9 @@ that you begin with the same taxonomy that was defined in the prototype.
 """
 
 from typing import List, Optional, Dict, Any
-
+from fastapi import APIRouter
+from fastapi.staticfiles import StaticFiles
+import pathlib
 from fastapi import FastAPI, HTTPException, Query, Path
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -27,6 +29,7 @@ import os
 
 DB_NAME = os.environ.get("SINUELO_DB_NAME", "sinuelo.db")
 
+api = APIRouter(prefix="/api")
 
 def get_connection() -> sqlite3.Connection:
     """Open a connection to the SQLite database with foreign keys enabled."""
@@ -694,4 +697,9 @@ def get_summary(
         by_conta=build_items(by_conta),
         by_categoria=build_items(by_cat),
     )
+    
+app.include_router(api)
+static_dir = pathlib.Path(__file__).resolve().parents[1]  # pasta raiz do projeto
+app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
+
     return summary
