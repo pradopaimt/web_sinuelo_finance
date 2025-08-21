@@ -68,8 +68,8 @@
       <div class="brand">
         <div class="logo" aria-hidden="true"></div>
         <div>
-          <h1>Agropecuária — Finance</h1>
-          <div style="font-size:12px; color:var(--muted)">v0.6 • Natureza → Conta → Categoria + Centros na aba Plano de Contas</div>
+          <h1>Financeiro - Agropecuára Sinuelo</h1>
+          <div style="font-size:12px; color:var(--muted)">v21.08.2025</div>
         </div>
       </div>
       <nav style="margin-top:14px">
@@ -91,20 +91,28 @@
       <div class="card">
         <h2>Novo lançamento</h2>
         <form id="formLanc" autocomplete="off">
-          <div class="row cols-3">
-            <div>
-              <label for="data">Data</label>
-              <input type="date" id="data" required />
-            </div>
-            <div>
-              <label for="natureza">Natureza</label>
-              <select id="natureza" required></select>
-            </div>
-            <div>
-              <label for="valor">Valor (R$)</label>
-              <input inputmode="decimal" id="valor" placeholder="0,00" required />
-            </div>
-          </div>
+     <!-- 1ª linha: só Data e Natureza -->
+<div class="row cols-3">
+  <div>
+    <label for="data">Data</label>
+    <input type="date" id="data" required />
+  </div>
+  <div>
+    <label for="natureza">Natureza</label>
+    <select id="natureza" required></select>
+  </div>
+</div>
+
+<!-- (mantém as linhas de Conta/Categoria/Centro e Descrição/Pagamento) -->
+
+<!-- NOVA linha no final: Valor -->
+<div class="row cols-3" style="margin-top:12px">
+  <div style="grid-column: 1 / -1">
+    <label for="valor">Valor (R$)</label>
+    <input inputmode="decimal" id="valor" placeholder="0,00" required />
+  </div>
+</div>
+
           <div class="row cols-3" style="margin-top:12px">
             <div>
               <label for="conta">Conta</label>
@@ -593,44 +601,56 @@
 
     // ===== Demonstrativo — integração com o widget =====
     const NAT_LABEL = { RO:'Receita Operacional', RNO:'Receita Não Operacional', DO:'Despesa Operacional', DNO:'Despesa Não Operacional' };
-    function safraLabel(iso){
-      const d = new Date(iso + 'T00:00:00'); const y = d.getFullYear(); const m = d.getMonth(); // 0..11
-      const ini = (m>=7) ? y : (y-1); const fim = ini+1;
-      const s2 = String(ini).slice(-2) + '-' + String(fim).slice(-2); return s2;
+   function safraLabel(iso){
+    const d = new Date(iso + 'T00:00:00');
+    const y = d.getFullYear();
+    const m = d.getMonth(); // 0..11
+    const ini = (m>=7) ? y : (y-1);
+    const fim = ini+1;
+    return String(ini).slice(-2) + '-' + String(fim).slice(-2);
+  }
+
+  function buildTreeDataForWidget(){
+    // Agora: Natureza -> Conta -> Categoria -> folhas (com ccValues)
+    // Mantemos as chaves usadas pelo widget:
+    //   nível 1 usa c.categoria (então colocamos o NOME DA CONTA em "categoria")
+    //   folha usa cta.conta (então colocamos o NOME DA CATEGORIA em "conta")
+    const NAT_LABEL = { RO:'Receita Operacional', RNO:'Receita Não Operacional', DO:'Despesa Operacional', DNO:'Despesa Não Operacional' };
+
+    const tree = {};
+    for (const x of state.lanc) {
+      const natureza = NAT_LABEL[x.natureza] || x.natureza || '(sem natureza)';
+      const contaNome = x.conta || '(sem conta)';        // nível 1
+      const categoriaNome = x.categoria || '(sem categoria)'; // nível 2 (folha)
+      const centro = x.centro || 'Geral';
+      const valor = Number(x.valor) || 0;
+      const ano = new Date(x.data + 'T00:00:00').getFullYear();
+      const safra = safraLabel(x.data);
+
+      tree[natureza] ??= {};
+      tree[natureza][contaNome] ??= {};               // nível 1 = conta
+      tree[natureza][contaNome][categoriaNome] ??= []; // folhas (categorias)
+
+      // Folha: reusamos o campo "conta" para exibir o NOME DA CATEGORIA na UI
+      tree[natureza][contaNome][categoriaNome].push({
+        conta: categoriaNome,                   // mostrado na 3ª coluna da árvore
+        ccValues: { [centro]: valor },
+        flags: { impostoRenda: !!x.ir },
+        periodo: { safra, ano }
+      });
     }
-    function buildTreeDataForWidget(){
-      // Natureza → Categoria → Conta → (muitos) lançamentos (cada lançamento é um nó folha c/ periodo e flags)
-      const tree = {};
-      for(const x of state.lanc){
-        const natureza = NAT_LABEL[x.natureza] || x.natureza || '(sem natureza)';
-        const categoria = x.categoria || '(sem categoria)';
-        const conta = x.conta || '(sem conta)';
-        const centro = x.centro || 'Geral';
-        const valor = Number(x.valor)||0;
-        const ano = new Date(x.data + 'T00:00:00').getFullYear();
-        const safra = safraLabel(x.data);
 
-        tree[natureza] ??= {};
-        tree[natureza][categoria] ??= {};
-        tree[natureza][categoria][conta] ??= [];
-
-        tree[natureza][categoria][conta].push({
-          conta,
-          ccValues: { [centro]: valor },
-          flags: { impostoRenda: !!x.ir },
-          periodo: { safra, ano }
-        });
-      }
-
-      // Converte para o formato do widget
-      return Object.entries(tree).map(([natureza, cats])=>({
-        natureza,
-        items: Object.entries(cats).map(([categoria, contas])=>({
-          categoria,
-          items: Object.entries(contas).flatMap(([conta, folhas])=>folhas)
-        }))
-      }));
-    }
+    // Converte para o formato esperado pelo widget
+    return Object.entries(tree).map(([natureza, contasObj]) => ({
+      natureza,
+      // nível 1: o widget espera "categoria" -> aqui colocamos o NOME DA CONTA
+      items: Object.entries(contasObj).map(([contaNome, categoriasObj]) => ({
+        categoria: contaNome,
+        // nível 2: folhas (cada item é uma "categoria")
+        items: Object.entries(categoriasObj).flatMap(([categoriaNome, folhas]) => folhas)
+      }))
+    }));
+  }
     let treeApi = null;
     function mountTreeWidget(){
       const costCenters = state.centros.map(c=>c.nome);
