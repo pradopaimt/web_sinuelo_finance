@@ -7,17 +7,17 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/favicon.ico" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>Agro Finance — Protótipo</title>
-<script>
-  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-    window.API_BASE = 'http://127.0.0.1:8000/api';
-  } else {
-    // GitHub Pages ou qualquer outro domínio → usa API do Fly
-    window.API_BASE = 'https://sinuelo-finance-api.fly.dev/api';
-  }
-</script>
+  <title>Financeiro - Agropecuária Sinuelo</title>
 
-  <!-- Estilos básicos do protótipo -->
+  <script>
+    // API base (local x produção)
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      window.API_BASE = 'http://127.0.0.1:8000/api';
+    } else {
+      window.API_BASE = 'https://sinuelo-finance-api.fly.dev/api';
+    }
+  </script>
+
   <style>
     :root{ --bg:#0f172a; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --accent-2:#06b6d4; --danger:#ef4444; --shadow:0 10px 25px rgba(0,0,0,.35); --radius:16px }
     *{box-sizing:border-box}
@@ -57,17 +57,19 @@
     @media (display-mode: standalone){ body{background:#0f172a} }
     .small{font-size:12px;color:var(--muted)}
     .inline{display:inline-flex; gap:8px; align-items:center}
+    .subtitle{font-size:14px; color:var(--muted); margin-top:-6px}
+    .muted{color:var(--muted); font-size:12px}
+    #err{display:none; margin-top:8px; background:rgba(239,68,68,.18); border:1px solid rgba(239,68,68,.35); color:#fecaca; padding:10px 12px; border-radius:12px; white-space:pre-wrap}
   </style>
 </head>
 <body>
-  <!-- Cabeçalho e navegação -->
   <header>
     <div class="container">
       <div class="brand">
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>Agropecuária — Finance</h1>
-          <div style="font-size:12px; color:var(--muted)">v0.5 • Natureza → Conta → Categoria (com criar/renomear/excluir contas) + rateio</div>
+          <div style="font-size:12px; color:var(--muted)">v0.6 • Natureza → Conta → Categoria + Centros na aba Plano de Contas</div>
         </div>
       </div>
       <nav style="margin-top:14px">
@@ -75,7 +77,6 @@
         <div class="tab" data-tab="extrato">Extrato</div>
         <div class="tab" data-tab="categorias">Plano de Contas</div>
         <div class="tab" data-tab="demo">Demonstrativos</div>
-        <div class="tab" data-tab="config">Configurações</div>
         <div class="install">
           <button id="btnInstall" style="display:none">Instalar app</button>
           <span id="installHint" style="font-size:12px; color:var(--muted); display:none">Use ⋮ → Adicionar à tela inicial</span>
@@ -84,9 +85,8 @@
     </div>
   </header>
 
-  <!-- Conteúdo principal -->
   <main class="container" style="padding-top:18px">
-    <!-- Seção de lançamentos -->
+    <!-- Lançamentos -->
     <section id="lancamentos" class="grid">
       <div class="card">
         <h2>Novo lançamento</h2>
@@ -105,7 +105,6 @@
               <input inputmode="decimal" id="valor" placeholder="0,00" required />
             </div>
           </div>
-
           <div class="row cols-3" style="margin-top:12px">
             <div>
               <label for="conta">Conta</label>
@@ -120,7 +119,6 @@
               <select id="centro"></select>
             </div>
           </div>
-
           <div class="row cols-2" style="margin-top:12px">
             <div>
               <label for="descricao">Descrição</label>
@@ -138,19 +136,15 @@
               </select>
             </div>
           </div>
-
-          <!-- Único checkbox de Imposto de Renda -->
           <div class="row" style="margin-top:8px">
             <label class="inline"><input type="checkbox" id="impostoRenda" style="width:auto;margin-right:8px"> Marcar como "Imposto de Renda"</label>
           </div>
-
           <div class="row" style="margin-top:12px">
             <div>
               <label for="anexo">Anexo (foto ou PDF da nota)</label>
               <input type="file" id="anexo" accept="image/*,.pdf" />
             </div>
           </div>
-
           <div class="btns" style="margin-top:16px">
             <button type="submit">Salvar lançamento</button>
             <button type="button" class="secondary" id="limpar">Limpar</button>
@@ -158,7 +152,6 @@
         </form>
       </div>
 
-      <!-- Resumo rápido (KPIs) -->
       <div class="card">
         <h2>Resumo rápido (mês)</h2>
         <div class="kpis">
@@ -176,7 +169,7 @@
       </div>
     </section>
 
-    <!-- Seção do extrato -->
+    <!-- Extrato -->
     <section id="extrato" class="card" style="display:none">
       <div class="row cols-3">
         <div>
@@ -212,10 +205,13 @@
       </div>
     </section>
 
-    <!-- Seção Plano de Contas -->
+    <!-- Plano de Contas + Centros -->
     <section id="categorias" class="card" style="display:none">
       <h2>Plano de Contas (Natureza → Conta → Categoria)</h2>
-      <div id="pcTree" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px"></div>
+      <div class="subtitle">Gerencie também os <b>Centros de Custo</b> abaixo.</div>
+
+      <div id="pcTree" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-top:12px"></div>
+
       <div class="row cols-3" style="margin-top:12px">
         <div>
           <label>Natureza</label>
@@ -230,6 +226,7 @@
           <button id="pcAddCat">Adicionar categoria</button>
         </div>
       </div>
+
       <div class="row cols-3" style="margin-top:8px">
         <div class="btns" style="align-items:end">
           <input id="pcNovaConta" placeholder="Nova conta" />
@@ -244,127 +241,47 @@
         </div>
       </div>
       <div class="small" style="margin-top:6px">Ao excluir uma conta com lançamentos, os lançamentos serão <b>reclassificados</b> para outra conta da mesma Natureza (você poderá escolher).</div>
-    </section>
 
-    <!-- Seção de demonstrativos -->
-    <section id="demo" class="card" style="display:none">
-      <h2>Demonstrativos por Centro (rateio do "Geral")</h2>
+      <hr style="border:none; border-top:1px solid rgba(255,255,255,.08); margin:18px 0">
+
+      <h3 style="margin:0 0 8px 0; font-size:16px">Centros de Custo</h3>
       <div class="row cols-3">
         <div>
-          <label>Tipo de demonstrativo</label>
-          <select id="demoTipo">
-            <option value="safra">Safra (agosto a julho)</option>
-            <option value="ano">Ano (janeiro a dezembro)</option>
-          </select>
+          <label>Novo centro</label>
+        <input id="novoCentro" placeholder="Ex.: Soja, Bovinos, Ovinos..." />
         </div>
-        <div id="demoPeriodo">
-          <label id="lblPeriodo">Safra (agosto a julho)</label>
-          <input type="number" id="demoSafra" min="2000" step="1" />
-          <div class="small" id="helpPeriodo">Ex.: 2024 — considera 01/08/2024 a 31/07/2025</div>
-          <label class="inline" id="wrapIr" style="display:none;margin-top:6px"><input type="checkbox" id="demoIrOnly" style="width:auto;margin-right:8px"> Somente "Imposto de Renda"</label>
-        </div>
-        <div>
-          <label>Área Total da Fazenda (ha)</label>
-          <input type="number" id="areaTotal" min="0" step="0.01" />
-        </div>
-      </div>
-      <!-- Novo seletor de centro de custo para demonstrativo -->
-      <div class="row cols-3" style="margin-top:8px">
-        <div>
-          <label>Centro de Custo</label>
-          <select id="demoCentro">
-            <option value="Todos">Todos</option>
-          </select>
+        <div class="btns" style="align-items:end">
+          <button id="addCentro">Adicionar</button>
         </div>
       </div>
       <div style="overflow:auto; margin-top:12px">
-        <table id="tabDemo">
-          <thead><tr id="demoHeader"></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <p class="small">Tudo lançado em <b>Geral</b> é rateado proporcionalmente à área dos demais centros (exclui-se "Geral").</p>
-      <!-- Resumos agregados por natureza, conta e categoria -->
-      <div class="summary" style="margin-top:12px">
-        <h3 style="margin-top:0">Resumo por Natureza</h3>
-        <table id="tabSummaryNature" style="margin-bottom:8px">
-          <thead>
-            <tr>
-              <th>Natureza</th>
-              <th>Receita Total</th>
-              <th>Despesa Total</th>
-              <th>Resultado</th>
-              <th>% Particip.</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-        <h3>Resumo por Conta</h3>
-        <table id="tabSummaryAccount" style="margin-bottom:8px">
-          <thead>
-            <tr>
-              <th>Conta</th>
-              <th>Receita Total</th>
-              <th>Despesa Total</th>
-              <th>Resultado</th>
-              <th>% Particip.</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-        <h3>Resumo por Categoria</h3>
-        <table id="tabSummaryCategory">
-          <thead>
-            <tr>
-              <th>Categoria</th>
-              <th>Receita Total</th>
-              <th>Despesa Total</th>
-              <th>Resultado</th>
-              <th>% Particip.</th>
-            </tr>
-          </thead>
+        <table id="tabCentros">
+          <thead><tr><th>Centro</th><th style="width:120px"></th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
     </section>
 
-    <!-- Seção de configurações -->
-    <section id="config" class="card" style="display:none">
-      <h2>Configurações</h2>
-      <div class="row cols-2">
-        <div>
-          <h3 style="margin:0 0 8px 0; font-size:16px">Centros de Custo</h3>
-          <div class="row cols-3">
-            <div>
-              <label>Novo centro</label>
-              <input id="novoCentro" placeholder="Ex.: Agricultura de Precisão" />
-            </div>
-            <div>
-              <label>Área (ha)</label>
-              <input id="novoCentroArea" type="number" min="0" step="0.01" />
-            </div>
-            <div class="btns" style="align-items:end"><button id="addCentro">Adicionar</button></div>
-          </div>
-          <div style="overflow:auto; margin-top:12px">
-            <table id="tabCentros">
-              <thead><tr><th>Centro</th><th>Área (ha)</th><th></th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-        <div>
-          <p style="color:var(--muted); font-size:14px; line-height:1.5">
-            Dados salvos apenas no <strong>navegador</strong> (teste). Centros iniciais: <b>Geral</b>, <b>Soja</b>, <b>Bovinos</b>, <b>Ovinos</b>.
-          </p>
-          <div class="btns"><button class="danger" id="apagarTudo">Apagar todos os dados (teste)</button></div>
-        </div>
+    <!-- Demonstrativos (APENAS ÁRVORE) -->
+    <section id="demo" class="card" style="display:none">
+      <h2 style="margin-top:0">Demonstrativo em Árvore (Natureza → Categoria → Conta)</h2>
+      <div class="small" style="margin: -4px 0 8px 0">Resultado = (Receitas − Despesas). % de cada linha é relativa ao total da Natureza.</div>
+      <div id="demonstrativo_tree"></div>
+      <div id="err"></div>
+      <div class="small" style="margin-top:8px">
+        <button id="btnReload" class="secondary">Recarregar da API</button>
+        <button id="btnMock" class="secondary" style="display:none">Usar dados de exemplo</button>
+        <button id="btnTests" class="secondary">Rodar testes</button>
+        <span id="testOut" class="muted"></span>
       </div>
     </section>
   </main>
 
   <footer>© <span id="ano"></span> Agropecuária Sinuelo • Protótipo</footer>
 
-  <!-- Scripts -->
+  <!-- Widget do demonstrativo -->
+  <script src="demonstrativo_tree.js"></script>
+
   <script>
     // ===== PWA =====
     if('serviceWorker' in navigator){ window.addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js').catch(console.warn)); }
@@ -379,213 +296,108 @@
     const fmtDate = (iso)=> new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR');
 
     // ===== Estado =====
-    // Estado da aplicação. Os dados serão carregados da API ao invés de localStorage.
-    const state = {
-      lanc: [],      // lançamentos carregados do backend
-      centros: [],   // centros de custo carregados do backend
-      tax: [],       // estrutura de natureza→conta→categoria carregada do backend
-      areaTotal: 0   // área total da fazenda (ajustável no front, não persistido no backend)
-    };
+    const state = { lanc: [], centros: [], tax: [] };
 
-    // Migração antigo -> novo (caso existam campos 'tipo')
-    if(state.lanc.length && state.lanc[0].tipo && !state.lanc[0].natureza){
-      state.lanc = state.lanc.map(x=> ({...x, natureza:x.tipo, conta:x.conta||'', categoria:x.categoria||x.categoria, tipo:undefined }));
+    // ===== API =====
+    async function fetchJSON(url){
+      const r = await fetch(url, { headers:{ 'Accept':'application/json' } });
+      if(!r.ok) throw new Error(`${r.status} ${r.statusText}`); return r.json();
     }
-
-    // Plano de contas padrão
-    const TAX_DEFAULT = [
-      { code:'RO', nome:'RECEITAS OPERACIONAIS', contas:[
-        {nome:'PECUÁRIA', cats:['VENDAS DE BOVINOS','VENDAS DE OVINOS','OUTRAS']},
-        {nome:'ALUGUÉIS E ARRENDAMENTOS', cats:['PASTOS']},
-        {nome:'AGRICULTURA', cats:['SOJA','MILHO','SORGO','FENO']},
-        {nome:'OUTROS', cats:['INDENIZAÇÃO E REPAROS','SERVIÇOS PRESTADOS','SEGUROS','VENDA DE EQUIPAMENTOS']}
-      ]},
-      { code:'RNO', nome:'RECEITAS NÃO OPERACIONAIS', contas:[
-        {nome:'RECEITAS NÃO OPERACIONAIS', cats:['EMPRÉSTIMOS TERCEIROS','APORTE EDUARDO PAIM','APORTE ROBERTO PAIM','JUROS E CORREÇÕES','VENDA DE INSUMOS','FINANCIAMENTO BANCÁRIO','CRÉDITOS EMPRESAS INSUMOS','CRÉDITOS EMPRESAS MÁQUINAS','OUTROS']}
-      ]},
-      { code:'DO', nome:'DESPESAS OPERACIONAIS', contas:[
-        {nome:'MÃO DE OBRA', cats:['SALÁRIOS','ENCARGOS E BENEFÍCIOS','MÃO DE OBRA EVENTUAL','ALIMENTAÇÃO','HORAS EXTRAS/DESC.REMUNERADO','UNIFORMES','SALÁRIO EDUARDO PAIM']},
-        {nome:'INSUMOS BOVINOS', cats:['SAL MINERAL','RAÇÕES E SUPLEMENTAÇÃO','MEDICAMENTOS E VACINAS','MATERIAIS E FERRAMENTAS','INSEMINAÇÃO - SÊMEN','INSEMINAÇÃO - NITROGÊNIO','SERVIÇOS - IATF','FRETES','COMISSÕES','VETERINÁRIO E EXAMES','OUTROS']},
-        {nome:'INSUMOS OVINOS', cats:['SAL MINERAL','RAÇÕES E SUPLEMENTAÇÃO','MEDICAMENTOS E VACINAS','MATERIAIS E FERRAMENTAS','FRETES','COMISSÕES','VETERINÁRIO E EXAMES','OUTROS']},
-        {nome:'MANUTENÇÃO DE INSTALAÇÕES', cats:['EMPREITEIROS','INSUMO E MATERIAIS','OUTROS']},
-        {nome:'PASTAGENS', cats:['SEMENTE E MUDAS','ADUBOS E FERTILIZANTES','DEFENSIVOS E HERBICIDAS','MATERIAIS E FERRAMENTAS','OUTROS']},
-        {nome:'MANUTENÇÃO DE MÁQUINAS E VEÍCULOS', cats:['DO-MANUTENÇÃO MÁQUINAS-TRATOR MF 4275','DO-MANUTENÇÃO MÁQUINAS-TRATOR MF 4292','DO-MANUTENÇÃO MÁQUINAS-TRATOR CASE 180','DO-MANUTENÇÃO MÁQUINAS-TRATOR MF 65X','DO-MANUTENÇÃO MÁQUINAS-TRATOR JD 5078','DO-MANUTENÇÃO MÁQUINAS-PA XCMG ZL30BR','DO-MANUTENÇÃO MÁQUINAS-COLHEDadeira 1550','DO-MANUTENÇÃO MÁQUINAS-COLHEDadeira 7500','DO-MANUTENÇÃO MÁQUINAS-PLANTADEIRA MF','DO-MANUTENÇÃO MÁQUINAS-PULVERIZADOR 3000 ADVANCED','DO-MANUTENÇÃO MÁQUINAS-IMPLEMENTOS','DO-MANUTENÇÃO MÁQUINAS-VEÍCULOS','DO-MANUTENÇÃO MÁQUINAS-MOTO','DO-MANUTENÇÃO MÁQUINAS-INSUMOS','DO-MANUTENÇÃO MÁQUINAS-LUBRIFICANTES, FILTROS E GRAXAS','OUTROS']},
-        {nome:'GRÃOS', cats:['SEMENTES','ADUBOS E FERTILIZANTES','INOCULANTES','ADUBOS FOLIARES','INSETICIDAS','FUNGICIDAS','HERBICIDAS','ÓLEO E REDUTOR DE PH','TRATAMENTO DE SEMENTE','MÃO-DE-OBRA','INSUMOS E MATERIAIS','SERV. TERCERIZADOS','TRANSPORTES E FRETES','ARMAZENAGEM E SECAGEM','ASSISTÊNCIA TÉCNICA','CORREÇÃO DO SOLO','DIVERSOS']},
-        {nome:'ADMINISTRATIVO', cats:['IMPOSTO, TAXAS E LICENÇAS','ESCRITÓRIO','PROFISSIONAIS ESPECIALIZADOS','JUROS, MULTAS, CORREÇÕES e IOF','CARTÓRIO E REGISTROS','SEGUROS','ENERGIA','ALIMENTAÇÃO CASA SEDE','TELEFONE + INTERNET','ANIMAIS DOMÉSTICOS','COMBUSTÍVEL VEÍCULO','CURSOS E TREINAMENTOS','FUNRURAL/SENAR','DOAÇÕES','OUTROS','RAÇÕES E INSUMOS - AVES E SUÍNOS','COMBUSTÍVEL MÁQUINAS']}
-      ]},
-      { code:'DNO', nome:'DESPESAS NÃO OPERACIONAIS', contas:[
-        {nome:'COMPRA DE SEMOVENTES', cats:['BOVINOS','EQUINOS','OVINOS','FRETES E COMISSÕES']},
-        {nome:'INVESTIMENTO EM EXPANSÃO', cats:['MÁQUINAS','BENFEITORIAS','CERCAS','MOBILIÁRIO','FERRAMENTAS','CORREÇÃO DO SOLO']},
-        {nome:'FINANCIAMENTOS', cats:['EMPRÉSTIMOS TERCEIROS','EMPRÉSTIMOS ROBERTO PAIM','EMPRÉSTIMOS EDUARDO PAIM','PAGAMENTOS EMPRESAS MÁQUINAS','PAGAMENTOS EMPRESAS INSUMOS','FINANC BANCÁRIO MÁQUINAS','FINANC BANCÁRIO CUSTEIO AGRÍCOLA/PECUÁRIO','FINANC BANCÁRIO INVESTIMENTOS','DESCONTOS, DEVOLUÇÃO E ACERTOS','OUTROS']}
-      ]}
-    ];
-
-    // Não carregamos dados de naturezas, contas, categorias ou centros a partir de localStorage.
-    // Eles serão buscados do backend durante a inicialização via funções assíncronas (ver loadData()).
-
-    // ===== Persistência =====
-    // No modo com backend, não persistimos mais em localStorage. Esta função é mantida para compatibilidade
-    // porém apenas atualiza areaTotal em localStorage para não perder a configuração ao recarregar.
-    function persist(){
-      localStorage.setItem('sinuelo_area_total', String(state.areaTotal||0));
-    }
-
-    // ===== Funções de acesso à API =====
-    // Busca lista de naturezas e, para cada uma, suas contas e categorias. Armazena em state.tax
     async function fetchNaturezas(){
-      // Carrega naturezas, contas e categorias do backend.
-      // Para cada natureza obtém suas contas e, para cada conta, suas categorias.
-      try{
-        const res = await fetch(window.API_BASE+`/naturezas`);
-        const list = await res.json();
-        state.tax = [];
-        for(const nat of list){
-          // Buscar contas desta natureza
-          const res2 = await fetch(window.API_BASE+`/naturezas/${nat.code}/contas`);
-          const contas = await res2.json();
-          const contObjs = [];
-          for(const acc of contas){
-            // Buscar categorias da conta
-            let cats = [];
-            try{
-              const res3 = await fetch(window.API_BASE+`/contas/${acc.id}/categorias`);
-              cats = await res3.json();
-            }catch(e){ cats = []; }
-            contObjs.push({
-              id: acc.id,
-              nome: acc.nome,
-              cats: cats.map(cat => cat.nome),
-              cats_full: cats.map(cat => ({ id: cat.id, nome: cat.nome }))
-            });
-          }
-          state.tax.push({
-            code: nat.code,
-            nome: nat.nome,
-            contas: contObjs
-          });
+      const list = await fetchJSON(`${API_BASE}/naturezas`);
+      state.tax = [];
+      for(const nat of list){
+        const contas = await fetchJSON(`${API_BASE}/naturezas/${nat.code}/contas`);
+        const contObjs = [];
+        for(const acc of contas){
+          let cats=[]; try{ cats = await fetchJSON(`${API_BASE}/contas/${acc.id}/categorias`);}catch(_){ cats=[]; }
+          contObjs.push({ id:acc.id, nome:acc.nome, cats: cats.map(c=>c.nome), cats_full: cats.map(c=>({id:c.id, nome:c.nome})) });
         }
-      } catch(err){ console.error('Erro ao carregar naturezas', err); }
+        state.tax.push({ code:nat.code, nome:nat.nome, contas: contObjs });
+      }
     }
-    // Busca lista de centros de custo e armazena em state.centros
     async function fetchCentros(){
+      const list = await fetchJSON(`${API_BASE}/centros`);
+      state.centros = list.map(c=>({ id:c.id, nome:c.nome }));
+    }
+    async function createCentro(nome){
       try{
-        const res = await fetch(window.API_BASE+`/centros`);
-        const list = await res.json();
-        state.centros = list.map(c=>({ id:c.id, nome:c.nome, area:c.area||0 }));
-      }catch(err){ console.error('Erro ao carregar centros', err); }
+        const res = await fetch(window.API_BASE+`/centros`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nome }) });
+        if(!res.ok) throw new Error('Falha ao criar centro');
+        return await res.json();
+      }catch(err){
+        console.warn('Fallback local: criando centro sem persistir no backend.', err);
+        return { id: crypto.randomUUID(), nome };
+      }
     }
-    // Busca lista de lançamentos do backend e armazena em state.lanc
-async function fetchLancamentos() {
-  try {
-    const res = await fetch(window.API_BASE + `/lancamentos`);
-    const list = await res.json();
-    state.lanc = list.map(item => {
-      // procurar o nome da conta/categoria no state.tax usando os IDs retornados
-      const nat = state.tax.find(n => n.code === item.natureza_code);
-      const acc = nat?.contas.find(c => c.id === item.conta_id);
-      const cat = acc?.cats_full.find(c => c.id === item.categoria_id);
-      const centro = state.centros.find(c => c.id === item.centro_id);
-      return {
-        id: item.id,
-        data: item.data,
-        natureza: item.natureza_code,
-        conta: acc?.nome || '',
-        categoria: cat?.nome || '',
-        centro: centro?.nome || '',
-        pagamento: item.pagamento,
-        descricao: item.descricao,
-        ir: item.ir,
-        valor: item.valor,
-        anexoNome: item.anexo_nome // esta propriedade no backend é anexo_nome
-      };
-    });
-  } catch(err){ console.error('Erro ao carregar lançamentos', err); }
-}
-
-    // Envia lançamento ao backend e retorna registro salvo. Converte id de conta/categoria/centro.
-    async function postLancamento(item){
-  try{
-    const payload = {
-      data: item.data,
-      natureza_code: item.natureza_code,
-      conta_id: item.conta_id ?? null,
-      categoria_id: item.categoria_id ?? null,
-      centro_id: item.centro_id ?? null,
-      pagamento: item.pagamento ?? '',
-      descricao: item.descricao ?? '',
-      ir: !!item.ir,
-      valor: item.valor,
-      anexo_nome: item.anexoNome ?? null, // <- nome certo pro backend
-    };
-    const res = await fetch(window.API_BASE + `/lancamentos`, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if(!res.ok){
-      const errTxt = await res.text();
-      throw new Error(errTxt || `HTTP ${res.status}`);
+    async function deleteCentro(id){
+      try{ const res = await fetch(window.API_BASE+`/centros/${id}`, { method:'DELETE' }); if(!res.ok) throw new Error('Falha ao excluir centro'); }
+      catch(err){ console.warn('Falha ao excluir no backend (talvez só local).', err); }
     }
-    return await res.json();
-  }catch(err){
-    console.error('Erro ao salvar lançamento', err);
-    return null;
-  }
-}
-    // Remove lançamento no backend
-    async function removeLancamento(id){
-      try{
-        await fetch(window.API_BASE+`/lancamentos/${id}`, { method:'DELETE' });
-      }catch(err){ console.error('Erro ao excluir lançamento', err); }
-    }
-    // Carrega todos os dados iniciais da API e prepara UI
-    async function loadData(){
-      await fetchNaturezas();
-      await fetchCentros();
-      await fetchLancamentos();
-      // Após carregar dados, preencher selects e renderizações
-      fillNatureza(); fillContas(); fillCentros(); fillDemoCentro();
-      setupDemoDefaults(); updateKPIs(); renderPlanoContas(); renderCentros();
-      // Preencher filtro de natureza no extrato
-      const filtroNaturezaSel = document.getElementById('filtroNatureza');
-      filtroNaturezaSel.innerHTML = '<option value="">Todas</option>';
-      state.tax.forEach(n=>{
-        const o=document.createElement('option');
-        o.value=n.code;
-        o.textContent=`${n.code} — ${n.nome}`;
-        filtroNaturezaSel.appendChild(o);
+    async function fetchLancamentos(){
+      const list = await fetchJSON(`${API_BASE}/lancamentos`);
+      state.lanc = list.map(item => {
+        const nat = state.tax.find(n => n.code === item.natureza_code);
+        const acc = nat?.contas.find(c => c.id === item.conta_id);
+        const cat = acc?.cats_full.find(c => c.id === item.categoria_id);
+        const centro = state.centros.find(c => c.id === item.centro_id);
+        return {
+          id: item.id,
+          data: item.data,
+          natureza: item.natureza_code,
+          conta: acc?.nome || '',
+          categoria: cat?.nome || '',
+          centro: centro?.nome || '',
+          pagamento: item.pagamento,
+          descricao: item.descricao,
+          ir: !!item.ir,
+          valor: Number(item.valor)||0,
+          anexoNome: item.anexo_nome || null
+        };
       });
     }
-    // Inicia carregamento ao abrir a página
-    window.addEventListener('DOMContentLoaded', loadData);
+    async function postLancamento(item){
+      try{
+        const payload = {
+          data: item.data, natureza_code: item.natureza_code,
+          conta_id: item.conta_id ?? null, categoria_id: item.categoria_id ?? null, centro_id: item.centro_id ?? null,
+          pagamento: item.pagamento ?? '', descricao: item.descricao ?? '', ir: !!item.ir,
+          valor: item.valor, anexo_nome: item.anexoNome ?? null
+        };
+        const res = await fetch(window.API_BASE + `/lancamentos`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+        if(!res.ok){ const errTxt = await res.text(); throw new Error(errTxt || `HTTP ${res.status}`); }
+        return await res.json();
+      }catch(err){ console.error('Erro ao salvar lançamento', err); return null; }
+    }
+    async function removeLancamento(id){
+      try{ await fetch(window.API_BASE+`/lancamentos/${id}`, { method:'DELETE' }); }
+      catch(err){ console.error('Erro ao excluir lançamento', err); }
+    }
 
-    // ===== UI Helpers (Plano de Contas) =====
+    // ===== Helpers de selects =====
     const elNat = document.getElementById('natureza');
     const elConta = document.getElementById('conta');
     const elCat = document.getElementById('categoria');
     const elCentro = document.getElementById('centro');
-
     function fillNatureza(){ elNat.innerHTML=''; state.tax.forEach(n=>{ const o=document.createElement('option'); o.value=n.code; o.textContent=`${n.code} — ${n.nome}`; elNat.appendChild(o); }); }
     function getNat(){ return state.tax.find(n=> n.code===elNat.value) }
     function fillContas(){ elConta.innerHTML=''; const nat=getNat(); nat?.contas.forEach(c=>{ const o=document.createElement('option'); o.value=c.nome; o.textContent=c.nome; elConta.appendChild(o); }); fillCategorias(); }
     function fillCategorias(){ elCat.innerHTML=''; const nat=getNat(); const conta = nat?.contas.find(c=> c.nome===elConta.value); conta?.cats.forEach(cn=>{ const o=document.createElement('option'); o.value=cn; o.textContent=cn; elCat.appendChild(o); }); }
     function fillCentros(){ elCentro.innerHTML=''; state.centros.forEach(c=>{ const o=document.createElement('option'); o.value=c.nome; o.textContent=c.nome; elCentro.appendChild(o); }); }
-
     elNat.addEventListener('change', fillContas);
     elConta.addEventListener('change', fillCategorias);
 
     // ===== Tabs =====
     const tabs = document.querySelectorAll('.tab');
-    const sections = ['lancamentos','extrato','categorias','demo','config'];
+    const sections = ['lancamentos','extrato','categorias','demo'];
     tabs.forEach(t=> t.addEventListener('click', ()=>{
       tabs.forEach(x=>x.classList.remove('active'));
       t.classList.add('active');
       sections.forEach(id => document.getElementById(id).style.display = id===t.dataset.tab ? (id==='lancamentos'?'grid':'block') : 'none');
       if(t.dataset.tab==='extrato') renderTabela();
-      if(t.dataset.tab==='categorias') renderPlanoContas();
+      if(t.dataset.tab==='categorias') { renderPlanoContas(); renderCentrosTable(); }
       if(t.dataset.tab==='lancamentos') updateKPIs();
-      if(t.dataset.tab==='config') { renderCentros(); }
-      if(t.dataset.tab==='demo') { document.getElementById('areaTotal').value = state.areaTotal || 0; renderDemo(); }
+      // demo não precisa de nada — o widget tem seus próprios controles
     }));
 
     // ===== Form Lançamento =====
@@ -597,84 +409,51 @@ async function fetchLancamentos() {
       ir: document.getElementById('impostoRenda'),
       anexo: document.getElementById('anexo')
     };
-
-    // Máscara de valor (R$)
     elForm.valor.addEventListener('input', (e)=>{
-      const raw=e.target.value.replace(/[^\d]/g,'');
-      const num=(Number(raw)/100).toFixed(2);
+      const raw=e.target.value.replace(/[^\d]/g,''); const num=(Number(raw)/100).toFixed(2);
       e.target.value = num.replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     });
-
     document.getElementById('formLanc').addEventListener('submit', async (e)=>{
       e.preventDefault();
-      // Montar objeto para API: converter nomes para IDs
       const dataStr = elForm.data.value || new Date().toISOString().slice(0,10);
-      const natCode = elNat.value;
-      const accName = elConta.value||'';
-      const catName = elCat.value||'';
-      const centreName = elCentro.value||'Geral';
-      // Encontrar IDs correspondentes
+      const natCode = elNat.value, accName = elConta.value||'', catName = elCat.value||'', centreName = elCentro.value||'Geral';
       const nat = state.tax.find(n => n.code === natCode);
       const acc = nat?.contas.find(c => c.nome === accName);
       const cat = acc?.cats_full.find(cat => cat.nome === catName);
       const centre = state.centros.find(c => c.nome === centreName);
       const payload = {
-        data: dataStr,
-        natureza_code: natCode,
-        conta_id: acc ? acc.id : null,
-        categoria_id: cat ? cat.id : null,
-        centro_id: centre ? centre.id : null,
-        pagamento: elForm.pagamento.value||'',
-        descricao: elForm.descricao.value||'',
-        ir: !!elForm.ir?.checked,
-        valor: parseBR(elForm.valor.value),
-        anexoNome: elForm.anexo.files[0]?.name || null
+        data: dataStr, natureza_code: natCode,
+        conta_id: acc ? acc.id : null, categoria_id: cat ? cat.id : null, centro_id: centre ? centre.id : null,
+        pagamento: elForm.pagamento.value||'', descricao: elForm.descricao.value||'', ir: !!elForm.ir?.checked,
+        valor: parseBR(elForm.valor.value), anexoNome: elForm.anexo.files[0]?.name || null
       };
-      // Enviar ao backend
       const saved = await postLancamento(payload);
       if(saved){
-  const nat = state.tax.find(n => n.code === saved.natureza_code);
-  const acc = nat?.contas.find(c => c.id === saved.conta_id);
-  const cat = acc?.cats_full.find(c => c.id === saved.categoria_id);
-  const centre = state.centros.find(c => c.id === saved.centro_id);
-
-  state.lanc.unshift({
-    id: saved.id,
-    data: saved.data,
-    natureza: saved.natureza_code,
-    conta: acc?.nome || '',
-    categoria: cat?.nome || '',
-    centro: centre?.nome || '',
-    pagamento: saved.pagamento,
-    descricao: saved.descricao,
-    ir: saved.ir,
-    valor: saved.valor,
-    anexoNome: saved.anexo_nome || null,
-  });
-
-        updateKPIs();
-        // limpar formulário e preencher seletores novamente
+        const nat = state.tax.find(n => n.code === saved.natureza_code);
+        const acc = nat?.contas.find(c => c.id === saved.conta_id);
+        const cat = acc?.cats_full.find(c => c.id === saved.categoria_id);
+        const centre = state.centros.find(c => c.id === saved.centro_id);
+        state.lanc.unshift({
+          id: saved.id, data: saved.data, natureza: saved.natureza_code,
+          conta: acc?.nome || '', categoria: cat?.nome || '', centro: centre?.nome || '',
+          pagamento: saved.pagamento, descricao: saved.descricao, ir: saved.ir, valor: Number(saved.valor)||0,
+          anexoNome: saved.anexo_nome || null
+        });
+        updateKPIs(); renderTabela(); updateTreeWidget();
         document.getElementById('formLanc').reset();
-        fillNatureza(); fillContas(); fillCentros(); fillDemoCentro();
+        fillNatureza(); fillContas(); fillCentros();
         alert('Lançamento salvo!');
-      } else {
-        alert('Erro ao salvar lançamento.');
-      }
+      } else { alert('Erro ao salvar lançamento.'); }
     });
-    document.getElementById('limpar').addEventListener('click', ()=>{
-      document.getElementById('formLanc').reset(); fillNatureza(); fillContas();
-    });
+    document.getElementById('limpar').addEventListener('click', ()=>{ document.getElementById('formLanc').reset(); fillNatureza(); fillContas(); });
 
     // ===== KPIs (mês atual) =====
     function updateKPIs(){
-      const now=new Date();
-      const ym=now.toISOString().slice(0,7);
+      const now=new Date(); const ym=now.toISOString().slice(0,7);
       const mes=state.lanc.filter(x=> x.data?.startsWith(ym));
       const sum=(arr,cond)=> arr.filter(cond).reduce((s,x)=>s+x.valor,0);
-      const ro=sum(mes,x=>x.natureza==='RO');
-      const rno=sum(mes,x=>x.natureza==='RNO');
-      const doo=sum(mes,x=>x.natureza==='DO');
-      const dno=sum(mes,x=>x.natureza==='DNO');
+      const ro=sum(mes,x=>x.natureza==='RO'); const rno=sum(mes,x=>x.natureza==='RNO');
+      const doo=sum(mes,x=>x.natureza==='DO'); const dno=sum(mes,x=>x.natureza==='DNO');
       document.getElementById('kpiRO').textContent=BRL.format(ro);
       document.getElementById('kpiRNO').textContent=BRL.format(rno);
       document.getElementById('kpiDO').textContent=BRL.format(doo);
@@ -688,9 +467,8 @@ async function fetchLancamentos() {
     const buscaTxt=document.getElementById('buscaTxt');
     [filtroMes,filtroNatureza,buscaTxt].forEach(x=> x.addEventListener('input', renderTabela));
     function renderTabela(){
-      const tbody=document.querySelector('#tabela tbody');
-      tbody.innerHTML='';
-      let arr=[...state.lanc];
+      const tbody=document.querySelector('#tabela tbody'); if(!tbody) return;
+      tbody.innerHTML=''; let arr=[...state.lanc];
       if(filtroMes.value) arr=arr.filter(x=> x.data?.startsWith(filtroMes.value));
       if(filtroNatureza.value) arr=arr.filter(x=> x.natureza===filtroNatureza.value);
       const q=buscaTxt.value?.toLowerCase?.()||'';
@@ -701,145 +479,73 @@ async function fetchLancamentos() {
         tbody.appendChild(tr);
       });
     }
-    // Ao editar, remova o lançamento antigo (do backend e local) e preencha o formulário com seus dados
     window.editar = async (id)=>{
-      const x=state.lanc.find(i=>i.id===id);
-      if(!x) return;
-      // Excluir no backend
+      const x=state.lanc.find(i=>i.id===id); if(!x) return;
       await removeLancamento(id);
-      // Remover do estado local
       state.lanc=state.lanc.filter(i=> i.id!==id);
-      updateKPIs();
-      renderTabela();
-      // Navegar para a aba de lançamentos e preencher o formulário para edição
+      updateKPIs(); renderTabela(); updateTreeWidget();
       document.querySelector('[data-tab="lancamentos"]').click();
-      elForm.data.value=x.data;
-      elNat.value=x.natureza;
-      fillContas();
-      elConta.value=x.conta;
-      fillCategorias();
-      elCat.value=x.categoria;
+      elForm.data.value=x.data; elNat.value=x.natureza; fillContas();
+      elConta.value=x.conta;  fillCategorias(); elCat.value=x.categoria;
       elForm.valor.value=BRL.format(x.valor).replace('R$\xa0','').trim();
-      fillCentros();
-      elCentro.value=x.centro;
-      elForm.pagamento.value=x.pagamento;
-      elForm.descricao.value=x.descricao;
-      elForm.ir.checked=!!x.ir;
+      fillCentros(); elCentro.value=x.centro; elForm.pagamento.value=x.pagamento;
+      elForm.descricao.value=x.descricao; elForm.ir.checked=!!x.ir;
     }
-    // Ao excluir, remova no backend e atualize listas locais
     window.excluir = async (id)=>{
       if(!confirm('Excluir este lançamento?')) return;
       await removeLancamento(id);
       state.lanc=state.lanc.filter(i=>i.id!==id);
-      updateKPIs();
-      renderTabela();
+      updateKPIs(); renderTabela(); updateTreeWidget();
     }
 
-    // ===== Plano de Contas (visual + CRUD de contas e categorias) =====
+    // ===== Plano de Contas =====
     function renderPlanoContas(){
-      const root=document.getElementById('pcTree');
-      root.innerHTML='';
+      const root=document.getElementById('pcTree'); root.innerHTML='';
       state.tax.forEach(n=>{
-        const col=document.createElement('div');
-        col.className='card';
-        const h=document.createElement('h3');
-        h.textContent=`${n.code} — ${n.nome}`;
-        h.style.marginTop='0';
-        h.style.fontSize='16px';
-        col.appendChild(h);
+        const col=document.createElement('div'); col.className='card';
+        const h=document.createElement('h3'); h.textContent=`${n.code} — ${n.nome}`; h.style.marginTop='0'; h.style.fontSize='16px'; col.appendChild(h);
         n.contas.forEach(c=>{
-          const b=document.createElement('div');
-          b.style.margin='8px 0';
-          const header=document.createElement('div');
-          header.className='inline';
+          const b=document.createElement('div'); b.style.margin='8px 0';
+          const header=document.createElement('div'); header.className='inline';
           header.innerHTML = `<span style="font-weight:700">${c.nome}</span> <button class='secondary' onclick="uiRenameConta('${n.code}', '${c.nome.replace(/'/g,"&#39;")}')">Renomear</button> <button class='danger' onclick="uiDeleteConta('${n.code}', '${c.nome.replace(/'/g,"&#39;")}')">Excluir</button>`;
           b.appendChild(header);
-          const ul=document.createElement('ul');
-          ul.style.margin='6px 0 0 16px';
-          ul.style.padding='0';
-          c.cats.forEach(k=>{
-            const li=document.createElement('li');
-            li.textContent=k;
-            li.style.margin='2px 0';
-            ul.appendChild(li);
-          });
-          b.appendChild(ul);
-          col.appendChild(b);
+          const ul=document.createElement('ul'); ul.style.margin='6px 0 0 16px'; ul.style.padding='0';
+          c.cats.forEach(k=>{ const li=document.createElement('li'); li.textContent=k; li.style.margin='2px 0'; ul.appendChild(li); });
+          b.appendChild(ul); col.appendChild(b);
         });
         root.appendChild(col);
       });
       fillPcSelectors();
     }
-    const pcNat=document.getElementById('pcNat');
-    const pcConta=document.getElementById('pcConta');
-    function fillPcSelectors(){
-      pcNat.innerHTML='';
-      state.tax.forEach(n=>{
-        const o=document.createElement('option');
-        o.value=n.code;
-        o.textContent=`${n.code} — ${n.nome}`;
-        pcNat.appendChild(o);
-      });
-      fillPcContas();
-    }
-    function fillPcContas(){
-      pcConta.innerHTML='';
-      const n=state.tax.find(x=> x.code===pcNat.value);
-      n?.contas.forEach(c=>{
-        const o=document.createElement('option');
-        o.value=c.nome;
-        o.textContent=c.nome;
-        pcConta.appendChild(o);
-      });
-    }
+    const pcNat=document.getElementById('pcNat'); const pcConta=document.getElementById('pcConta');
+    function fillPcSelectors(){ pcNat.innerHTML=''; state.tax.forEach(n=>{ const o=document.createElement('option'); o.value=n.code; o.textContent=`${n.code} — ${n.nome}`; pcNat.appendChild(o); }); fillPcContas(); }
+    function fillPcContas(){ pcConta.innerHTML=''; const n=state.tax.find(x=> x.code===pcNat.value); n?.contas.forEach(c=>{ const o=document.createElement('option'); o.value=c.nome; o.textContent=c.nome; pcConta.appendChild(o); }); }
     pcNat.addEventListener('change', fillPcContas);
-
     document.getElementById('pcAddCat').addEventListener('click', ()=>{
-      const nat=state.tax.find(x=> x.code===pcNat.value);
-      const conta=nat?.contas.find(c=> c.nome===pcConta.value);
-      const name=(document.getElementById('pcNovaCat').value||'').trim();
-      if(!name) return alert('Informe o nome da categoria');
-      if(conta.cats.includes(name)) return alert('Categoria já existe nesta conta.');
-      conta.cats.push(name);
-      document.getElementById('pcNovaCat').value='';
-      persist(); renderPlanoContas(); fillContas();
+      const nat=state.tax.find(x=> x.code===pcNat.value); const conta=nat?.contas.find(c=> c.nome===pcConta.value);
+      const name=(document.getElementById('pcNovaCat').value||'').trim(); if(!name) return alert('Informe o nome da categoria');
+      if(conta.cats.includes(name)) return alert('Categoria já existe nesta conta.'); conta.cats.push(name);
+      document.getElementById('pcNovaCat').value=''; renderPlanoContas(); fillContas();
     });
     document.getElementById('pcAddConta').addEventListener('click', ()=>{
-      const n=state.tax.find(x=> x.code===pcNat.value);
-      const name=(document.getElementById('pcNovaConta').value||'').trim();
+      const n=state.tax.find(x=> x.code===pcNat.value); const name=(document.getElementById('pcNovaConta').value||'').trim();
       if(!name) return alert('Informe o nome da conta');
       if(n.contas.some(c=> c.nome.toLowerCase()===name.toLowerCase())) return alert('Essa conta já existe nesta Natureza.');
-      n.contas.push({nome:name, cats:[]});
-      document.getElementById('pcNovaConta').value='';
-      persist(); renderPlanoContas(); fillContas(); fillPcContas();
+      n.contas.push({nome:name, cats:[]}); document.getElementById('pcNovaConta').value='';
+      renderPlanoContas(); fillContas(); fillPcContas();
     });
     document.getElementById('pcBtnRenomear').addEventListener('click', ()=>{
-      const n=state.tax.find(x=> x.code===pcNat.value);
-      const oldName=pcConta.value;
-      const newName=(document.getElementById('pcRenomearConta').value||'').trim();
-      if(!oldName) return alert('Selecione uma conta');
-      if(!newName) return alert('Digite o novo nome');
+      const n=state.tax.find(x=> x.code===pcNat.value); const oldName=pcConta.value; const newName=(document.getElementById('pcRenomearConta').value||'').trim();
+      if(!oldName) return alert('Selecione uma conta'); if(!newName) return alert('Digite o novo nome');
       if(n.contas.some(c=> c.nome.toLowerCase()===newName.toLowerCase())) return alert('Já existe uma conta com esse nome.');
-      const conta=n.contas.find(c=> c.nome===oldName);
-      conta.nome=newName;
-      // reclassificar lançamentos
+      const conta=n.contas.find(c=> c.nome===oldName); conta.nome=newName;
       state.lanc.forEach(l=>{ if(l.natureza===n.code && l.conta===oldName){ l.conta=newName; } });
-      document.getElementById('pcRenomearConta').value='';
-      persist(); renderPlanoContas(); fillContas(); fillPcContas(); alert('Conta renomeada e lançamentos reclassificados.');
+      document.getElementById('pcRenomearConta').value=''; renderPlanoContas(); fillContas(); fillPcContas(); alert('Conta renomeada e lançamentos reclassificados.');
     });
     document.getElementById('pcBtnExcluir').addEventListener('click', ()=>{
-      const n=state.tax.find(x=> x.code===pcNat.value);
-      const name=pcConta.value;
-      if(!name) return alert('Selecione uma conta');
-      uiDeleteConta(n.code, name);
+      const n=state.tax.find(x=> x.code===pcNat.value); const name=pcConta.value; if(!name) return alert('Selecione uma conta'); uiDeleteConta(n.code, name);
     });
-    // Ações inline na árvore
-    window.uiRenameConta = (natCode, name)=>{
-      pcNat.value = natCode;
-      fillPcContas();
-      pcConta.value = name;
-      document.getElementById('pcRenomearConta').focus();
-    }
+    window.uiRenameConta = (natCode, name)=>{ pcNat.value = natCode; fillPcContas(); pcConta.value = name; document.getElementById('pcRenomearConta').focus(); }
     window.uiDeleteConta = (natCode, name)=>{
       const n=state.tax.find(x=> x.code===natCode);
       const depend = state.lanc.filter(l=> l.natureza===natCode && l.conta===name).length;
@@ -851,455 +557,203 @@ async function fetchLancamentos() {
         if(!destino || !outros.includes(destino)){ alert('Operação cancelada.'); return; }
       }
       if(!confirm(`Excluir a conta "${name}" da Natureza ${n.nome}?`)) return;
-      // Reclassificar se necessário
       if(destino){ state.lanc.forEach(l=>{ if(l.natureza===natCode && l.conta===name){ l.conta = destino; } }); }
-      // Mesclar categorias na conta destino (se houver)
       if(destino){ const contaDst = n.contas.find(c=> c.nome===destino); const contaSrc = n.contas.find(c=> c.nome===name); contaSrc.cats.forEach(cat=>{ if(!contaDst.cats.includes(cat)) contaDst.cats.push(cat); }); }
-      // Remover conta
-      n.contas = n.contas.filter(c=> c.nome!==name);
-      persist(); renderPlanoContas(); fillContas(); fillPcContas(); alert('Conta excluída com sucesso.');
+      n.contas = n.contas.filter(c=> c.nome!==name); renderPlanoContas(); fillContas(); fillPcContas(); alert('Conta excluída com sucesso.');
     }
 
-    // ===== Config: Centros =====
+    // ===== Centros (na aba Plano de Contas) =====
     const tabCentrosBody = ()=> document.querySelector('#tabCentros tbody');
-    function renderCentros(){
-      const tbody=tabCentrosBody();
+    function renderCentrosTable(){
+      const tbody=tabCentrosBody(); if(!tbody) return;
       tbody.innerHTML='';
       state.centros.forEach((c,idx)=>{
         const tr=document.createElement('tr');
-        tr.innerHTML=`<td>${c.nome}</td><td><input type="number" min="0" step="0.01" value="${c.area}" onchange="updArea(${idx}, this.value)"/></td><td style="text-align:right">${c.nome!=='Geral'?`<button class='danger' onclick='delCentro(${idx})'>Remover</button>`:''}</td>`;
+        tr.innerHTML=`<td>${c.nome}</td><td style="text-align:right">${c.nome!=='Geral'?`<button class='danger' onclick='delCentro(${idx})'>Remover</button>`:''}</td>`;
         tbody.appendChild(tr);
       });
     }
-    window.updArea = (idx,val)=>{
-      state.centros[idx].area = Number(val)||0;
-      persist();
-    }
-    window.delCentro = (idx)=>{
+    window.delCentro = async (idx)=>{
       if(!confirm('Remover este centro?')) return;
-      const nome=state.centros[idx].nome;
-      if(nome==='Geral') return alert('Não é permitido remover "Geral".');
-      state.centros.splice(idx,1);
-      persist(); renderCentros(); fillCentros();
+      const centro = state.centros[idx]; if(centro.nome==='Geral') return alert('Não é permitido remover "Geral".');
+      try{ await deleteCentro(centro.id); } finally {
+        state.lanc.forEach(l=>{ if(l.centro===centro.nome){ l.centro='Geral'; }});
+        state.centros.splice(idx,1);
+        renderCentrosTable(); fillCentros(); updateTreeWidget();
+      }
     }
-    document.getElementById('addCentro').addEventListener('click', ()=>{
-      const nome=document.getElementById('novoCentro').value.trim();
-      const area=Number(document.getElementById('novoCentroArea').value)||0;
-      if(!nome) return alert('Informe o nome do centro');
+    document.getElementById('addCentro').addEventListener('click', async ()=>{
+      const nome=document.getElementById('novoCentro').value.trim(); if(!nome) return alert('Informe o nome do centro');
       if(state.centros.some(c=>c.nome.toLowerCase()===nome.toLowerCase())) return alert('Centro já existe.');
-      state.centros.push({nome, area});
+      const created = await createCentro(nome); if(!created.id) created.id = crypto.randomUUID();
+      state.centros.push({ id: created.id, nome: created.nome || nome });
       document.getElementById('novoCentro').value='';
-      document.getElementById('novoCentroArea').value='';
-      persist(); renderCentros(); fillCentros();
-    });
-    document.getElementById('apagarTudo').addEventListener('click', ()=>{
-      if(!confirm('Excluir TODOS os dados de teste?')) return;
-      state.lanc=[];
-      state.centros=[];
-      state.areaTotal=0;
-      state.tax=null;
-      persist(); location.reload();
+      renderCentrosTable(); fillCentros(); updateTreeWidget();
     });
 
-    // ===== Demonstrativos: Safra/Ano com filtro de centro e IR =====
-    // Preenche seletor de centro para demonstrativo
-    function fillDemoCentro(){
-      const sel=document.getElementById('demoCentro');
-      if(!sel) return;
-      sel.innerHTML='';
-      const optAll=document.createElement('option');
-      optAll.value='Todos';
-      optAll.textContent='Todos';
-      sel.appendChild(optAll);
-      state.centros.forEach(c=>{
-        const o=document.createElement('option');
-        o.value=c.nome;
-        o.textContent=c.nome;
-        sel.appendChild(o);
-      });
+    // ===== Demonstrativo — integração com o widget =====
+    const NAT_LABEL = { RO:'Receita Operacional', RNO:'Receita Não Operacional', DO:'Despesa Operacional', DNO:'Despesa Não Operacional' };
+    function safraLabel(iso){
+      const d = new Date(iso + 'T00:00:00'); const y = d.getFullYear(); const m = d.getMonth(); // 0..11
+      const ini = (m>=7) ? y : (y-1); const fim = ini+1;
+      const s2 = String(ini).slice(-2) + '-' + String(fim).slice(-2); return s2;
     }
-    // Função que define período corrente a partir das opções Safra/Ano e ano base
-    function currentPeriod(){
-      const y = Number(document.getElementById('demoSafra').value || new Date().getFullYear());
-      const tipo = document.getElementById('demoTipo').value;
-      if(tipo === 'safra'){
-        return { start:`${y}-08-01`, end:`${y+1}-07-31`, irOnly:false };
-      } else {
-        return { start:`${y}-01-01`, end:`${y}-12-31`, irOnly: !!document.getElementById('demoIrOnly').checked };
-      }
-    }
-    // Atualiza labels conforme tipo de demonstrativo
-    function onTipoChange(){
-      const tipo=document.getElementById('demoTipo').value;
-      const lblPeriodo=document.getElementById('lblPeriodo');
-      const helpPeriodo=document.getElementById('helpPeriodo');
-      const wrapIr=document.getElementById('wrapIr');
-      if(tipo==='safra'){
-        lblPeriodo.textContent='Safra (agosto a julho)';
-        helpPeriodo.textContent='Ex.: 2024 — considera 01/08/2024 a 31/07/2025';
-        wrapIr.style.display='none';
-      } else {
-        lblPeriodo.textContent='Ano (janeiro a dezembro)';
-        helpPeriodo.textContent='Ex.: 2024 — considera 01/01/2024 a 31/12/2024';
-        wrapIr.style.display='inline-flex';
-      }
-      renderDemo();
-    }
-    // Define ano base padrão para safra/ano (safra corrente)
-    function setupDemoDefaults(){
-      const now=new Date();
-      // se estivermos depois de julho (mês 7), safra inicia no ano atual; caso contrário, ano anterior
-      const safraYear = (now.getMonth()>=7) ? now.getFullYear() : now.getFullYear()-1;
-      document.getElementById('demoTipo').value='safra';
-      document.getElementById('demoSafra').value=String(safraYear);
-      document.getElementById('wrapIr').style.display='none';
-    }
-    // Renderiza a tabela de demonstrativo com colunas mensais e total
-    function renderDemo(){
-      const tbody=document.querySelector('#tabDemo tbody');
-      const thead=document.getElementById('demoHeader');
-      tbody.innerHTML='';
-      thead.innerHTML='';
-      const {start,end,irOnly} = currentPeriod();
-      // monta array de meses entre start e end
-      const months=[];
-      let d=new Date(start + 'T00:00:00'); d.setDate(1);
-      const endDate=new Date(end + 'T00:00:00'); endDate.setDate(1);
-      while(d<=endDate){ months.push(new Date(d)); d.setMonth(d.getMonth()+1); }
-      // monta cabeçalho
-      const monthNames=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-      let headerHtml='<th>Centro</th>';
-      months.forEach(m => {
-        headerHtml += `<th>${monthNames[m.getMonth()]}/${String(m.getFullYear()).slice(-2)}</th>`;
-      });
-      headerHtml += '<th>Total</th>';
-      thead.innerHTML=headerHtml;
-      // filtra lançamentos do período
-      let arr=state.lanc.filter(x=> x.data && x.data>=start && x.data<=end);
-      if(irOnly){ arr=arr.filter(x=> x.ir===true); }
-      // centros a exibir
-      const centroSel=document.getElementById('demoCentro').value || 'Todos';
-      const centres=(centroSel==='Todos') ? state.centros.map(c=> c.nome) : [centroSel];
-      centres.forEach(nomeCentro => {
-        let totalNet=0;
-        let rowHtml='<td>'+nomeCentro+'</td>';
-        months.forEach(md => {
-          const ym=md.toISOString().slice(0,7);
-          let rec=0, desp=0;
-          arr.forEach(x => {
-            const cName=x.centro || 'Geral';
-            if(cName===nomeCentro && x.data.startsWith(ym)){
-              if(x.natureza==='RO' || x.natureza==='RNO') rec += x.valor; else desp += x.valor;
-            }
-          });
-          const net=rec-desp;
-          totalNet += net;
-          rowHtml += `<td>${BRL.format(net)}</td>`;
-        });
-        rowHtml += `<td style="font-weight:700">${BRL.format(totalNet)}</td>`;
-        tbody.innerHTML += `<tr>${rowHtml}</tr>`;
-      });
-      // Agora atualiza resumos agregados usando os lançamentos filtrados
-      renderSummary(arr);
-      // Renderiza resumo hierárquico por natureza, conta e categoria
-      renderDrillSummary(arr);
-    }
+    function buildTreeDataForWidget(){
+      // Natureza → Categoria → Conta → (muitos) lançamentos (cada lançamento é um nó folha c/ periodo e flags)
+      const tree = {};
+      for(const x of state.lanc){
+        const natureza = NAT_LABEL[x.natureza] || x.natureza || '(sem natureza)';
+        const categoria = x.categoria || '(sem categoria)';
+        const conta = x.conta || '(sem conta)';
+        const centro = x.centro || 'Geral';
+        const valor = Number(x.valor)||0;
+        const ano = new Date(x.data + 'T00:00:00').getFullYear();
+        const safra = safraLabel(x.data);
 
-    // Calcula e preenche resumos por natureza, conta e categoria
-    function renderSummary(arr){
-      // calcula totais geral de receita e despesa
-      let totalRec=0;
-      let totalDesp=0;
-      arr.forEach(x=>{
-        if(x.natureza==='RO' || x.natureza==='RNO'){
-          totalRec += x.valor;
-        } else {
-          totalDesp += x.valor;
-        }
-      });
-      const totalNet = totalRec - totalDesp;
-      // Totais por natureza
-      const sumNature = {};
-      arr.forEach(x=>{
-        const n=x.natureza;
-        if(!sumNature[n]) sumNature[n] = {rec:0, desp:0};
-        if(n==='RO' || n==='RNO') sumNature[n].rec += x.valor; else sumNature[n].desp += x.valor;
-      });
-      const tbodyNat=document.querySelector('#tabSummaryNature tbody');
-      if(tbodyNat){
-        tbodyNat.innerHTML='';
-        Object.keys(sumNature).forEach(key=>{
-          const rec=sumNature[key].rec||0;
-          const desp=sumNature[key].desp||0;
-          const net=rec-desp;
-          const perc=(totalNet!==0) ? ((net/totalNet)*100) : 0;
-          tbodyNat.innerHTML += `<tr><td>${key}</td><td>${BRL.format(rec)}</td><td>${BRL.format(desp)}</td><td>${BRL.format(net)}</td><td>${perc.toFixed(1)}%</td></tr>`;
-        });
-      }
-      // Totais por conta
-      const sumAcc={};
-      arr.forEach(x=>{
-        const acc=x.conta || '(sem conta)';
-        if(!sumAcc[acc]) sumAcc[acc] = {rec:0, desp:0};
-        if(x.natureza==='RO' || x.natureza==='RNO') sumAcc[acc].rec += x.valor; else sumAcc[acc].desp += x.valor;
-      });
-      const tbodyAcc=document.querySelector('#tabSummaryAccount tbody');
-      if(tbodyAcc){
-        tbodyAcc.innerHTML='';
-        Object.keys(sumAcc).forEach(key=>{
-          const rec=sumAcc[key].rec||0;
-          const desp=sumAcc[key].desp||0;
-          const net=rec-desp;
-          const perc=(totalNet!==0) ? ((net/totalNet)*100) : 0;
-          tbodyAcc.innerHTML += `<tr><td>${key}</td><td>${BRL.format(rec)}</td><td>${BRL.format(desp)}</td><td>${BRL.format(net)}</td><td>${perc.toFixed(1)}%</td></tr>`;
-        });
-      }
-      // Totais por categoria
-      const sumCat={};
-      arr.forEach(x=>{
-        const cat=x.categoria || '(sem categoria)';
-        if(!sumCat[cat]) sumCat[cat] = {rec:0, desp:0};
-        if(x.natureza==='RO' || x.natureza==='RNO') sumCat[cat].rec += x.valor; else sumCat[cat].desp += x.valor;
-      });
-      const tbodyCat=document.querySelector('#tabSummaryCategory tbody');
-      if(tbodyCat){
-        tbodyCat.innerHTML='';
-        Object.keys(sumCat).forEach(key=>{
-          const rec=sumCat[key].rec||0;
-          const desp=sumCat[key].desp||0;
-          const net=rec-desp;
-          const perc=(totalNet!==0) ? ((net/totalNet)*100) : 0;
-          tbodyCat.innerHTML += `<tr><td>${key}</td><td>${BRL.format(rec)}</td><td>${BRL.format(desp)}</td><td>${BRL.format(net)}</td><td>${perc.toFixed(1)}%</td></tr>`;
-        });
-      }
-    }
+        tree[natureza] ??= {};
+        tree[natureza][categoria] ??= {};
+        tree[natureza][categoria][conta] ??= [];
 
-    // === Resumo hierárquico por Natureza / Conta / Categoria ===
-    let drillHierarchy = {};
-    let drillTotalNet = 0;
-    function renderDrillSummary(arr){
-      // Construir hierarquia e calcular totais gerais
-      drillHierarchy = {};
-      let totalRec=0;
-      let totalDesp=0;
-      arr.forEach(x => {
-        const nat = x.natureza;
-        if(!drillHierarchy[nat]){
-          drillHierarchy[nat] = {rec:0, desp:0, net:0, accounts:{}};
-        }
-        // atualizar totals
-        if(nat==='RO' || nat==='RNO'){
-          drillHierarchy[nat].rec += x.valor;
-          totalRec += x.valor;
-        } else {
-          drillHierarchy[nat].desp += x.valor;
-          totalDesp += x.valor;
-        }
-        // conta
-        const acc = x.conta || '(sem conta)';
-        if(!drillHierarchy[nat].accounts[acc]){
-          drillHierarchy[nat].accounts[acc] = {rec:0, desp:0, net:0, categories:{}};
-        }
-        if(nat==='RO' || nat==='RNO'){
-          drillHierarchy[nat].accounts[acc].rec += x.valor;
-        } else {
-          drillHierarchy[nat].accounts[acc].desp += x.valor;
-        }
-        // categoria
-        const cat = x.categoria || '(sem categoria)';
-        if(!drillHierarchy[nat].accounts[acc].categories[cat]){
-          drillHierarchy[nat].accounts[acc].categories[cat] = {rec:0, desp:0, net:0};
-        }
-        if(nat==='RO' || nat==='RNO'){
-          drillHierarchy[nat].accounts[acc].categories[cat].rec += x.valor;
-        } else {
-          drillHierarchy[nat].accounts[acc].categories[cat].desp += x.valor;
-        }
-      });
-      // calcular nets
-      Object.keys(drillHierarchy).forEach(nKey => {
-        const n = drillHierarchy[nKey];
-        n.net = n.rec - n.desp;
-        Object.keys(n.accounts).forEach(accKey => {
-          const a = n.accounts[accKey];
-          a.net = a.rec - a.desp;
-          Object.keys(a.categories).forEach(catKey => {
-            const c = a.categories[catKey];
-            c.net = c.rec - c.desp;
-          });
-        });
-      });
-      drillTotalNet = totalRec - totalDesp;
-      // atualizar sumário total
-      const sumDiv = document.getElementById('summaryTotals');
-      if(sumDiv){
-        sumDiv.innerHTML = `<strong>Receita Total:</strong> ${BRL.format(totalRec)} &nbsp; <strong>Despesa Total:</strong> ${BRL.format(totalDesp)} &nbsp; <strong>Resultado:</strong> ${BRL.format(drillTotalNet)}`;
-      }
-      // preencher linhas iniciais (naturezas)
-      const tbody = document.querySelector('#tabDrill tbody');
-      if(tbody){
-        tbody.innerHTML = '';
-        Object.keys(drillHierarchy).forEach(nKey => {
-          const n = drillHierarchy[nKey];
-          const perc = (drillTotalNet!==0) ? ((n.net/drillTotalNet)*100) : 0;
-          const tr = document.createElement('tr');
-          tr.classList.add('nature-row');
-          tr.dataset.nat = nKey;
-          tr.innerHTML = `<td>${nKey}</td><td></td><td></td><td>${BRL.format(n.rec)}</td><td>${BRL.format(n.desp)}</td><td>${BRL.format(n.net)}</td><td>${perc.toFixed(1)}%</td>`;
-          tr.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleNature(nKey);
-          });
-          tbody.appendChild(tr);
+        tree[natureza][categoria][conta].push({
+          conta,
+          ccValues: { [centro]: valor },
+          flags: { impostoRenda: !!x.ir },
+          periodo: { safra, ano }
         });
       }
-    }
 
-    function toggleNature(nKey){
-      const tbody = document.querySelector('#tabDrill tbody');
-      const rows = Array.from(tbody.querySelectorAll('tr'));
-      const nRow = rows.find(r => r.dataset.nat === nKey && !r.dataset.acc);
-      if(!nRow) return;
-      const expanded = nRow.classList.contains('expanded');
-      if(!expanded){
-        const index = rows.indexOf(nRow);
-        let offset = 1;
-        const nature = drillHierarchy[nKey];
-        Object.keys(nature.accounts).forEach(accKey => {
-          const a = nature.accounts[accKey];
-          const perc = (drillTotalNet!==0) ? ((a.net/drillTotalNet)*100) : 0;
-          const accRow = document.createElement('tr');
-          accRow.classList.add('account-row');
-          accRow.dataset.nat = nKey;
-          accRow.dataset.acc = accKey;
-          accRow.innerHTML = `<td></td><td>${accKey}</td><td></td><td>${BRL.format(a.rec)}</td><td>${BRL.format(a.desp)}</td><td>${BRL.format(a.net)}</td><td>${perc.toFixed(1)}%</td>`;
-          accRow.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleAccount(nKey, accKey);
-          });
-          tbody.insertBefore(accRow, rows[index+offset] || null);
-          offset++;
-        });
-        nRow.classList.add('expanded');
-      } else {
-        // collapse: remove all rows until the next nature row (dataset.nat && no dataset.acc)
-        let next = nRow.nextSibling;
-        while(next && !(next.dataset.nat && !next.dataset.acc)){
-          const toRemove = next;
-          next = next.nextSibling;
-          toRemove.remove();
-        }
-        nRow.classList.remove('expanded');
-      }
+      // Converte para o formato do widget
+      return Object.entries(tree).map(([natureza, cats])=>({
+        natureza,
+        items: Object.entries(cats).map(([categoria, contas])=>({
+          categoria,
+          items: Object.entries(contas).flatMap(([conta, folhas])=>folhas)
+        }))
+      }));
     }
-
-    function toggleAccount(nKey, accKey){
-      const tbody = document.querySelector('#tabDrill tbody');
-      const rows = Array.from(tbody.querySelectorAll('tr'));
-      const accRow = rows.find(r => r.dataset.nat === nKey && r.dataset.acc === accKey && !r.dataset.cat);
-      if(!accRow) return;
-      const expanded = accRow.classList.contains('expanded');
-      if(!expanded){
-        const index = rows.indexOf(accRow);
-        let offset = 1;
-        const cats = drillHierarchy[nKey].accounts[accKey].categories;
-        Object.keys(cats).forEach(catKey => {
-          const c = cats[catKey];
-          const perc = (drillTotalNet!==0) ? ((c.net/drillTotalNet)*100) : 0;
-          const catRow = document.createElement('tr');
-          catRow.classList.add('category-row');
-          catRow.dataset.nat = nKey;
-          catRow.dataset.acc = accKey;
-          catRow.dataset.cat = catKey;
-          catRow.innerHTML = `<td></td><td></td><td>${catKey}</td><td>${BRL.format(c.rec)}</td><td>${BRL.format(c.desp)}</td><td>${BRL.format(c.net)}</td><td>${perc.toFixed(1)}%</td>`;
-          tbody.insertBefore(catRow, rows[index+offset] || null);
-          offset++;
-        });
-        accRow.classList.add('expanded');
-      } else {
-        // collapse categories: remove consecutive category rows
-        let next = accRow.nextSibling;
-        while(next && next.dataset.acc === accKey && next.dataset.cat){
-          const toRemove = next;
-          next = next.nextSibling;
-          toRemove.remove();
-        }
-        accRow.classList.remove('expanded');
-      }
+    let treeApi = null;
+    function mountTreeWidget(){
+      const costCenters = state.centros.map(c=>c.nome);
+      async function loadData(){ return buildTreeDataForWidget(); }
+      treeApi = DemonstrativoTreeWidget.mount('#demonstrativo_tree', { loadData, costCenters });
     }
-    // Eventos do demonstrativo
-    document.getElementById('demoTipo').addEventListener('change', onTipoChange);
-    document.getElementById('demoSafra').addEventListener('input', renderDemo);
-    document.getElementById('demoIrOnly').addEventListener('change', renderDemo);
-    document.getElementById('demoCentro').addEventListener('change', renderDemo);
-    document.getElementById('areaTotal').addEventListener('input', (e)=>{
-      state.areaTotal = Number(e.target.value)||0;
-      persist(); renderDemo();
-    });
+    function updateTreeWidget(){
+      if(!treeApi) return;
+      const costCenters = state.centros.map(c=>c.nome);
+      const data = buildTreeDataForWidget();
+      treeApi.setData(data, costCenters);
+    }
 
     // ===== Exportar / Importar CSV =====
     document.getElementById('exportCsv').addEventListener('click', ()=>{
       const header=['id','data','natureza','conta','categoria','descricao','centro','pagamento','ir','valor'];
       const rows=state.lanc.map(x=> header.map(h=>{
-        const v=x[h]??'';
-        return typeof v==='number'? String(v).replace('.',',') : String(v).replace(/"/g,'""');
+        const v=x[h]??''; return typeof v==='number'? String(v).replace('.',',') : String(v).replace(/"/g,'""');
       }));
       const csv=[header.join(';')].concat(rows.map(r=> r.join(';'))).join('\n');
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(blob);
-      a.download='sinuelo_finance.csv';
-      a.click();
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob); a.download='sinuelo_finance.csv'; a.click();
     });
     document.getElementById('importCsvBtn').addEventListener('click', ()=> document.getElementById('importCsv').click());
     document.getElementById('importCsv').addEventListener('change', (e)=>{
-      const file=e.target.files[0];
-      if(!file) return;
-      const reader=new FileReader();
+      const file=e.target.files[0]; if(!file) return; const reader=new FileReader();
       reader.onload=()=>{
-        const lines=reader.result.split(/\r?\n/).filter(Boolean);
-        const header=lines.shift().split(';');
-        const idx=(name)=> header.indexOf(name);
+        const lines=reader.result.split(/\r?\n/).filter(Boolean); const header=lines.shift().split(';'); const idx=(name)=> header.indexOf(name);
         const arr=lines.map(l=>{
           const c=l.split(';');
           return {
-            id:c[idx('id')]||crypto.randomUUID(),
-            data:c[idx('data')],
-            natureza:c[idx('natureza')]||c[idx('tipo')],
-            conta:c[idx('conta')],
-            categoria:c[idx('categoria')],
-            descricao:c[idx('descricao')],
-            centro:c[idx('centro')],
-            pagamento:c[idx('pagamento')],
-            ir: ((c[idx('ir')]||'').toLowerCase()=='true' || c[idx('ir')]=='1'),
+            id:c[idx('id')]||crypto.randomUUID(), data:c[idx('data')], natureza:c[idx('natureza')]||c[idx('tipo')],
+            conta:c[idx('conta')], categoria:c[idx('categoria')], descricao:c[idx('descricao')], centro:c[idx('centro')],
+            pagamento:c[idx('pagamento')], ir: ((c[idx('ir')]||'').toLowerCase()=='true' || c[idx('ir')]=='1'),
             valor: parseBR(c[idx('valor')]||'0')
           };
         });
         state.lanc=arr.concat(state.lanc);
-        persist(); updateKPIs();
+        updateKPIs(); renderTabela(); updateTreeWidget();
         alert('Importado! Abra o Extrato/Demonstrativos para conferir.');
       };
       reader.readAsText(file,'utf-8');
     });
 
+    // ===== Carregamento inicial =====
+    async function loadData(){
+      document.getElementById('err').style.display='none';
+      try{
+        await fetchNaturezas(); await fetchCentros(); await fetchLancamentos();
+
+        // Filtros do extrato
+        const filtroNaturezaSel = document.getElementById('filtroNatureza');
+        filtroNaturezaSel.innerHTML = '<option value="">Todas</option>';
+        state.tax.forEach(n=>{ const o=document.createElement('option'); o.value=n.code; o.textContent=`${n.code} — ${n.nome}`; filtroNaturezaSel.appendChild(o); });
+
+        // UI
+        fillNatureza(); fillContas(); fillCentros(); renderPlanoContas(); renderCentrosTable();
+        updateKPIs(); renderTabela();
+
+        // Árvore
+        mountTreeWidget(); updateTreeWidget();
+      }catch(e){
+        const el= document.getElementById('err');
+        el.textContent = 'Falha ao carregar dados do demonstrativo.\n- Verifique se a API está acessível em '+API_BASE+'\n- Se estiver usando outro domínio, confira CORS no backend.\nDetalhes: '+ (e && e.message ? e.message : e);
+        el.style.display='block';
+        document.getElementById('btnMock').style.display='inline-flex';
+      }
+    }
+
+    // ===== Mock + Testes mínimos =====
+    function loadMock(){
+      state.centros = [{id:'c1',nome:'Geral'},{id:'c2',nome:'Soja'},{id:'c3',nome:'Bovinos'}];
+      state.tax = [
+        {code:'RO', nome:'RECEITAS OPERACIONAIS', contas:[{id:'a1',nome:'AGRICULTURA',cats:[],cats_full:[]}]},
+        {code:'DO', nome:'DESPESAS OPERACIONAIS', contas:[{id:'a2',nome:'GRÃOS',cats:[],cats_full:[]}]} 
+      ];
+      state.lanc = [
+        {id:'1', data:'2024-08-20', natureza:'RO', conta:'AGRICULTURA', categoria:'SOJA', centro:'Soja', valor: 25000, ir:false},
+        {id:'2', data:'2024-09-05', natureza:'DO', conta:'GRÃOS', categoria:'SEMENTES', centro:'Soja', valor: 6000,  ir:false},
+        {id:'3', data:'2025-01-10', natureza:'DO', conta:'GRÃOS', categoria:'HERBICIDAS', centro:'Soja', valor: 3000,  ir:true},
+        {id:'4', data:'2025-03-01', natureza:'RO', conta:'AGRICULTURA', categoria:'SOJA', centro:'Geral', valor: 12000, ir:true},
+        {id:'5', data:'2025-05-15', natureza:'RO', conta:'AGRICULTURA', categoria:'MILHO', centro:'Bovinos', valor: 8000, ir:false}
+      ];
+      updateKPIs(); renderTabela(); renderPlanoContas(); renderCentrosTable(); 
+      if(!treeApi) mountTreeWidget(); updateTreeWidget();
+    }
+    function assert(cond, msg){ if(!cond) throw new Error(msg); }
+    function runTests(){
+      const saved = {centros:[...state.centros], tax:[...state.tax], lanc:[...state.lanc]};
+      try{
+        loadMock();
+        const data = buildTreeDataForWidget();
+        // 1) Deve haver naturezas Receita e Despesa
+        const nats = data.map(n=>n.natureza);
+        assert(nats.some(x=>/Receita/i.test(x)), 'Deve haver Receita');
+        assert(nats.some(x=>/Despesa/i.test(x)), 'Deve haver Despesa');
+        // 2) Cada folha precisa de periodo e flags para o widget filtrar
+        const umaConta = data.flatMap(n=>n.items).flatMap(c=>c.items)[0];
+        assert(umaConta.ccValues && umaConta.flags && umaConta.periodo, 'Nós folha precisam ccValues/flags/periodo');
+        document.getElementById('testOut').textContent = '✅ Testes OK';
+      }catch(e){
+        document.getElementById('testOut').textContent = '❌ Falhou: ' + (e.message||e);
+      } finally {
+        state.centros = saved.centros; state.tax = saved.tax; state.lanc = saved.lanc;
+        try{ updateTreeWidget(); }catch(_){}
+      }
+    }
+
     // ===== Inicialização =====
     document.getElementById('ano').textContent = new Date().getFullYear();
     document.getElementById('data').value = new Date().toISOString().slice(0,10);
-    // Preenche filtros
-    const filtroNaturezaSel = document.getElementById('filtroNatureza');
-    filtroNaturezaSel.innerHTML = '<option value="">Todas</option>';
-    state.tax.forEach(n=>{
-      const o=document.createElement('option');
-      o.value=n.code;
-      o.textContent=`${n.code} — ${n.nome}`;
-      filtroNaturezaSel.appendChild(o);
+    // listeners
+    window.addEventListener('DOMContentLoaded', ()=>{
+      // carrega dados reais
+      loadData();
+      // botões do demonstrativo
+      document.getElementById('btnReload').addEventListener('click', loadData);
+      document.getElementById('btnMock').addEventListener('click', loadMock);
+      document.getElementById('btnTests').addEventListener('click', runTests);
+      // preencher selects de forma otimista (atualiza depois do load)
+      fillNatureza(); fillContas(); fillCentros();
     });
-    // Preenche seletores iniciais e KPIs
-    fillNatureza(); fillContas(); fillCentros(); fillDemoCentro();
-    setupDemoDefaults();
-    updateKPIs();
-    renderPlanoContas();
-    renderCentros();
   </script>
 </body>
 </html>
+
