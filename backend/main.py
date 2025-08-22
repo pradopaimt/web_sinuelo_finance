@@ -84,31 +84,37 @@ def init_db() -> None:
         """
     )
     cur.execute(
-     """
-    CREATE TABLE IF NOT EXISTS lancamento (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        data TEXT NOT NULL,
-        natureza_code TEXT NOT NULL,
-        conta_id INTEGER,
-        categoria_id INTEGER,
-        centro_id INTEGER,
-        pagamento TEXT,
-        descricao TEXT,
-        fornecedor_cliente TEXT,
-        ir INTEGER NOT NULL DEFAULT 0,
-        valor REAL NOT NULL,
-        anexo_nome TEXT,
-        FOREIGN KEY(natureza_code) REFERENCES natureza(code) ON DELETE RESTRICT,
-        FOREIGN KEY(conta_id) REFERENCES conta(id) ON DELETE SET NULL,
-        FOREIGN KEY(categoria_id) REFERENCES categoria(id) ON DELETE SET NULL,
-        FOREIGN KEY(centro_id) REFERENCES centro(id) ON DELETE SET NULL
-    )
-    """
+        """
+        CREATE TABLE IF NOT EXISTS lancamento (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            data TEXT NOT NULL,
+            natureza_code TEXT NOT NULL,
+            conta_id INTEGER,
+            categoria_id INTEGER,
+            centro_id INTEGER,
+            pagamento TEXT,
+            descricao TEXT,
+            fornecedor_cliente TEXT,
+            ir INTEGER NOT NULL DEFAULT 0,
+            valor REAL NOT NULL,
+            anexo_nome TEXT,
+            FOREIGN KEY(natureza_code) REFERENCES natureza(code) ON DELETE RESTRICT,
+            FOREIGN KEY(conta_id) REFERENCES conta(id) ON DELETE SET NULL,
+            FOREIGN KEY(categoria_id) REFERENCES categoria(id) ON DELETE SET NULL,
+            FOREIGN KEY(centro_id) REFERENCES centro(id) ON DELETE SET NULL
+        )
+        """
     )
     cur.execute("PRAGMA table_info(lancamento)")
     cols = {row[1] for row in cur.fetchall()}
+
+    # migração defensiva (se subir uma imagem antiga sem a coluna)
     if "fornecedor_cliente" not in cols:
-        cur.execute("ALTER TABLE lancamento ADD COLUMN fornecedor_cliente TEXT")
+        try:
+            cur.execute("ALTER TABLE lancamento ADD COLUMN fornecedor_cliente TEXT")
+        except sqlite3.OperationalError as e:
+            if "duplicate column name" not in str(e).lower():
+                raise
 
     # Check if naturezas already exist; if not, seed default taxonomy
     cur.execute("SELECT COUNT(*) AS count FROM natureza")
