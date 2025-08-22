@@ -108,7 +108,7 @@ def init_db() -> None:
     cur.execute("PRAGMA table_info(lancamento)")
     cols = {row[1] for row in cur.fetchall()}
     if "fornecedor_cliente" not in cols:
-    cur.execute("ALTER TABLE lancamento ADD COLUMN fornecedor_cliente TEXT")
+        cur.execute("ALTER TABLE lancamento ADD COLUMN fornecedor_cliente TEXT")
 
     # Check if naturezas already exist; if not, seed default taxonomy
     cur.execute("SELECT COUNT(*) AS count FROM natureza")
