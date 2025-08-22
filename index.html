@@ -9,14 +9,13 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>Financeiro - Agropecuária Sinuelo</title>
 
-  <script>
-    // API base (local x produção)
-    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-      window.API_BASE = 'http://127.0.0.1:8000/api';
-    } else {
-      window.API_BASE = 'https://sinuelo-finance-api.fly.dev/api';
-    }
-  </script>
+<script>
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    window.API_BASE = 'http://127.0.0.1:8000/api';
+  } else {
+    window.API_BASE = location.origin + '/api';
+  }
+</script>
 
   <style>
     :root{ --bg:#0f172a; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --accent-2:#06b6d4; --danger:#ef4444; --shadow:0 10px 25px rgba(0,0,0,.35); --radius:16px }
@@ -69,7 +68,7 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>Financeiro - Agropecuária Sinuelo</h1>
-          <div style="font-size:12px; color:var(--muted)">v21.08.2025</div>
+          <div style="font-size:12px; color:var(--muted)">v22.08.2025</div>
         </div>
       </div>
       <nav style="margin-top:14px">
@@ -477,7 +476,9 @@
         alert('Lançamento salvo!');
       } else { alert('Erro ao salvar lançamento.'); }
     });
-    document.getElementById('limpar').addEventListener('click', ()=>{ document.getElementById('formLanc').reset(); fillNatureza(); fillContas(); });
+    document.getElementById('limpar').addEventListener('click', ()=>{ 
+		document.getElementById('formLanc').reset(); 
+		fillNatureza(); fillContas(); fillCentros();});
 
     // ===== KPIs (mês atual) =====
     function updateKPIs(){
