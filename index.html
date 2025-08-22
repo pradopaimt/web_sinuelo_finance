@@ -283,27 +283,28 @@
     </section>
 
     <!-- Demonstrativos (APENAS ÁRVORE) -->
-  <section id="demo" class="card" style="display:none">
+<section id="demo" class="card" style="display:none">
   <h2 style="margin-top:0">Demonstrativos</h2>
-  <div class="small" style="margin: -4px 8px 8px 0">
-    Resultado = (Receitas − Despesas). % de cada linha é relativa ao total da Natureza.
-  </div>
 
-  <div class="row" style="margin: 8px 0 12px 0;">
-    <label for="visaoDemonstrativos" style="margin-right:8px;color:var(--muted)">Visão:</label>
-    <select id="visaoDemonstrativos">
-      <option value="safra">Safra / Ano</option>
-      <option value="mes">Ano / Mês</option>
-    </select>
-
-    <div style="margin-left:auto; display:flex; gap:6px">
-      <button id="expandAll" class="btn">Expandir tudo</button>
-      <button id="collapseAll" class="btn">Contrair tudo</button>
+  <!-- NOVO: filtro opcional por mês -->
+  <div class="row" style="margin: 8px 0 12px 0; align-items:end;">
+    <div>
+      <label for="demoMes">Mês específico (opcional)</label>
+      <input type="month" id="demoMes" />
+    </div>
+    <div class="btns" style="align-items:end">
+      <button id="demoMesClear" class="secondary" type="button">Limpar</button>
     </div>
   </div>
 
-  <div id="demonstrativo_tree" class="tree"></div>
-  <div id="err" class="small" style="color:#fca5a5"></div>
+  <!-- Container do widget drop-in -->
+  <div id="demonstrativo-tree"></div>
+
+  <div class="small" style="margin: 8px 0 0 0">
+    Resultado = (Receitas − Despesas). % de cada linha é relativa ao total da Natureza.
+  </div>
+  <div id="err" class="small" style="color:#fca5a5; display:none"></div>
+
 </section>
   </main>
 <style>
@@ -319,6 +320,113 @@
   <!-- Widget do demonstrativo -->
   <script src="demonstrativo_tree.js" defer></script>
 	<script>  const API_BASE = window.API_BASE; </script>
+<script>
+// ===== Helper: safra igual ao resto do app =====
+function safraLabel(iso){
+  const d = new Date(iso + 'T00:00:00');
+  const y = d.getFullYear(); const m = d.getMonth();
+  const ini = (m>=7) ? y : (y-1); const fim = ini+1;
+  return String(ini).slice(-2) + '-' + String(fim).slice(-2);
+}
+
+// ===== Transform: state.lanc -> formato do DemonstrativoTreeWidget
+// Suporta filtro opcional de mês (yyyy-mm)
+function buildTreeDataFromState(filterMonth){
+  // nome da Natureza pelo code
+  const nameByCode = {};
+  (state.tax || []).forEach(n => { nameByCode[n.code] = n.nome; });
+  const fallback = { RO:'Receita Operacional', RNO:'Receita Não Operacional', DO:'Despesa Operacional', DNO:'Despesa Não Operacional' };
+  const natName = code => nameByCode[code] || fallback[code] || String(code||'Sem natureza');
+
+  // árvore intermediária: nat -> cat -> conta -> periodoKey -> leaf
+  const tree = {};
+  for (const x of (state.lanc || [])) {
+    if (filterMonth && !String(x.data).startsWith(filterMonth)) continue; // <— filtro por mês
+
+    const nat   = natName(x.natureza);
+    const cat   = x.categoria || 'Sem categoria';
+    const conta = x.conta || 'Sem conta';
+    const cc    = x.centro || 'Geral';
+
+    const safra = safraLabel(x.data);
+    const ano   = new Date(x.data + 'T00:00:00').getFullYear();
+    const mes   = String(x.data).slice(0,7); // yyyy-mm
+
+    const periodKey = safra + '|' + ano + '|' + mes;
+
+    (((tree[nat] ||= {})[cat] ||= {})[conta] ||= {});
+    const leaf = (tree[nat][cat][conta][periodKey] ||= {
+      ccValues: {},
+      flags: { impostoRenda: false },
+      periodo: { safra, ano, mes } // <— adicionamos mes
+    });
+
+    leaf.ccValues[cc] = (leaf.ccValues[cc] || 0) + (Number(x.valor) || 0);
+    if (x.ir) leaf.flags.impostoRenda = true;
+  }
+
+  // converte para o array esperado pelo widget
+  return Object.entries(tree).map(([natureza, cats]) => ({
+    natureza,
+    items: Object.entries(cats).map(([categoria, contas]) => ({
+      categoria,
+      items: Object.entries(contas).flatMap(([conta, periodMap]) =>
+        Object.values(periodMap).map(leaf => ({
+          conta,
+          ccValues: leaf.ccValues,
+          flags: leaf.flags,
+          periodo: leaf.periodo
+        }))
+      )
+    }))
+  }));
+}
+
+// ===== Montagem do widget e sincronismo com UI do mês =====
+let demoApi = null;
+let demoFilterMonth = ''; // '' = sem filtro (safra/ano funcionam no widget)
+
+document.addEventListener('DOMContentLoaded', () => {
+  // monta o widget; ele chama loadData() imediatamente
+  demoApi = window.DemonstrativoTreeWidget?.mount('#demonstrativo-tree', {
+    loadData: async () => buildTreeDataFromState(demoFilterMonth),
+    costCenters: (state.centros || []).map(c => c.nome)
+  });
+
+  // Filtro de mês
+  const inp = document.getElementById('demoMes');
+  const btnClear = document.getElementById('demoMesClear');
+
+  inp?.addEventListener('change', () => {
+    demoFilterMonth = inp.value || '';
+    if (demoApi) demoApi.setData(
+      buildTreeDataFromState(demoFilterMonth),
+      (state.centros || []).map(c => c.nome)
+    );
+  });
+
+  btnClear?.addEventListener('click', () => {
+    demoFilterMonth = '';
+    if (inp) inp.value = '';
+    if (demoApi) demoApi.setData(
+      buildTreeDataFromState(demoFilterMonth),
+      (state.centros || []).map(c => c.nome)
+    );
+  });
+});
+
+// Mantém compatibilidade com o resto do app (salvar/excluir lançamentos etc.)
+function updateTreeWidget(){
+  try{
+    if (demoApi) {
+      demoApi.setData(
+        buildTreeDataFromState(demoFilterMonth),
+        (state.centros || []).map(c => c.nome)
+      );
+    }
+  }catch(e){ console.warn(e); }
+}
+</script>
   <script>
     // ===== PWA =====
     if('serviceWorker' in navigator){ window.addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js').catch(console.warn)); }
@@ -783,34 +891,6 @@
       document.getElementById('novoCentro').value='';
       renderCentrosTable(); fillCentros(); updateTreeWidget();
     });
-
-  // ===== Demonstrativo — Provider para o renderer =====
-function safraLabel(iso){
-  const d = new Date(iso + 'T00:00:00'); const y = d.getFullYear(); const m = d.getMonth();
-  const ini = (m>=7) ? y : (y-1); const fim = ini+1;
-  return String(ini).slice(-2) + '-' + String(fim).slice(-2);
-}
-
-// O renderer lerá daqui sempre que precisar
-window.DemonstrativoDataProvider = {
-  // itens crus esperados pelo demonstrativo_tree.js
-  getData: () => state.lanc.map(x => ({
-    data: x.data,
-    valor: x.valor,
-    descricao: x.descricao || '',
-    // já calculamos safra/ano aqui para acelerar
-    safra: safraLabel(x.data),
-    ano: new Date(x.data + 'T00:00:00').getFullYear()
-  })),
-  // (hoje não usamos centros no renderer; mantido para evoluções)
-  getCentros: () => state.centros.map(c => c.nome)
-};
-
-// Sempre que os lançamentos mudarem, pedimos um re-render
-function updateTreeWidget(){
-  try { window.DemonstrativoTree?.refresh?.(); } catch(e){ console.warn(e); }
-}
-
 
     // ===== Exportar / Importar CSV =====
     document.getElementById('exportCsv').addEventListener('click', ()=>{
