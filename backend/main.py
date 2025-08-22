@@ -94,6 +94,7 @@ def init_db() -> None:
         centro_id INTEGER,
         pagamento TEXT,
         descricao TEXT,
+        fornecedor_cliente TEXT,
         ir INTEGER NOT NULL DEFAULT 0,
         valor REAL NOT NULL,
         anexo_nome TEXT,
@@ -104,6 +105,10 @@ def init_db() -> None:
     )
     """
     )
+    cur.execute("PRAGMA table_info(lancamento)")
+    cols = {row[1] for row in cur.fetchall()}
+    if "fornecedor_cliente" not in cols:
+    cur.execute("ALTER TABLE lancamento ADD COLUMN fornecedor_cliente TEXT")
 
     # Check if naturezas already exist; if not, seed default taxonomy
     cur.execute("SELECT COUNT(*) AS count FROM natureza")
@@ -375,6 +380,7 @@ class LancamentoIn(BaseModel):
     centro_id: Optional[int] = None
     pagamento: Optional[str] = None
     descricao: Optional[str] = None
+    fornecedor_cliente: Optional[str] = None
     ir: bool = False
     valor: float
     anexo_nome: Optional[str] = None
@@ -388,6 +394,7 @@ class LancamentoOut(BaseModel):
     centro_id: Optional[int] = None
     pagamento: Optional[str] = None
     descricao: Optional[str] = None
+    fornecedor_cliente: Optional[str] = None
     ir: bool = False
     valor: float
     anexo_nome: Optional[str] = None
@@ -498,13 +505,12 @@ def create_lancamento(item: LancamentoIn) -> LancamentoOut:
     conn = get_connection()
     cur = conn.cursor()
     try:
-        # Insert into lancamento; ir stored as int 0/1
         cur.execute(
             """
             INSERT INTO lancamento(
                 data, natureza_code, conta_id, categoria_id, centro_id,
-                pagamento, descricao, ir, valor, anexo_nome
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                pagamento, descricao, fornecedor_cliente, ir, valor, anexo_nome
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 item.data,
@@ -514,6 +520,7 @@ def create_lancamento(item: LancamentoIn) -> LancamentoOut:
                 item.centro_id,
                 item.pagamento,
                 item.descricao,
+                item.fornecedor_cliente,
                 1 if item.ir else 0,
                 item.valor,
                 item.anexo_nome,
@@ -524,7 +531,7 @@ def create_lancamento(item: LancamentoIn) -> LancamentoOut:
     except sqlite3.IntegrityError as e:
         conn.close()
         raise HTTPException(status_code=400, detail=str(e))
-    # Fetch and return the created lancamento
+
     cur.execute("SELECT * FROM lancamento WHERE id=?", (lanc_id,))
     row = cur.fetchone()
     conn.close()
@@ -537,6 +544,7 @@ def create_lancamento(item: LancamentoIn) -> LancamentoOut:
         centro_id=row["centro_id"],
         pagamento=row["pagamento"],
         descricao=row["descricao"],
+        fornecedor_cliente=row["fornecedor_cliente"],
         ir=bool(row["ir"]),
         valor=row["valor"],
         anexo_nome=row["anexo_nome"],
@@ -579,6 +587,7 @@ def list_lancamentos(
             centro_id=row["centro_id"],
             pagamento=row["pagamento"],
             descricao=row["descricao"],
+            fornecedor_cliente=row["fornecedor_cliente"],
             ir=bool(row["ir"]),
             valor=row["valor"],
             anexo_nome=row["anexo_nome"],
@@ -595,6 +604,15 @@ def delete_lancamento(lanc_id: int = Path(..., description="Lancamento ID")) -> 
     conn.close()
     return None
 
+@api.delete("/centros/{centro_id}", status_code=204)
+def delete_centro(centro_id: int = Path(..., description="Centro ID")) -> None:
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM centro WHERE id=?", (centro_id,))
+    conn.commit()
+    conn.close()
+    return None
+    
 def _aggregate(rows: List[sqlite3.Row], key_func) -> Dict[str, Dict[str, float]]:
     """
     Helper to aggregate receita and despesa per key.  The ``key_func`` extracts
