@@ -44,7 +44,7 @@
     button.secondary{background:#0b1220; color:var(--text); border:1px solid rgba(255,255,255,.1)}
     button.danger{background:var(--danger); color:#310808}
     .btns{display:flex; gap:8px; flex-wrap:wrap}
-    .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:12px}
+	.kpis {display: grid; grid-template-columns: 1fr; /* 1 coluna = empilhado */  gap: 12px;}
     .kpi{background:#0b1220;border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px}
     .kpi .label{font-size:12px; color:var(--muted)}
     .kpi .value{font-size:20px; font-weight:800; margin-top:4px}
@@ -68,7 +68,7 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>Financeiro - Agropecuária Sinuelo</h1>
-          <div style="font-size:12px; color:var(--muted)">v22.08.2025</div>
+          <div style="font-size:12px; color:var(--muted)">v22.08.2025.2</div>
         </div>
       </div>
       <nav style="margin-top:14px">

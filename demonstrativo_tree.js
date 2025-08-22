@@ -12,7 +12,7 @@
   }
   function safeDateParts(iso){
     if(!iso) return { ano:null, mes:null, dia:null };
-    // Força meia-noite local pra evitar “virada” de fuso afetar o mês
+    // força meia-noite local pra evitar “virada” de fuso afetar o mês
     const d = new Date(String(iso).slice(0,10) + 'T00:00:00');
     return { ano: d.getFullYear(), mes: d.getMonth(), dia: d.getDate() };
   }
