@@ -1,7 +1,6 @@
 // Nome do cache (troque a versão quando fizer alterações importantes)
-const CACHE_NAME = "sinuelo-cache-v12";
+const CACHE_NAME = "sinuelo-cache-v14"; // bump a versão para forçar update
 
-// Lista de arquivos para pré-cache
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,20 +8,17 @@ const ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/maskable-512.png",
-  "./icons/favicon.ico"
+  "./icons/favicon.ico",
+  "./demonstrativo_tree.js",
 ];
 
-// Instalação do service worker → faz cache inicial
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
   self.skipWaiting();
 });
 
-// Ativação → limpa caches antigos
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -32,20 +28,26 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Estratégia de busca: cache-first para assets, network-first para resto
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // Cache-first para arquivos estáticos locais
+  // Nunca interceptar a API (sempre rede, sem cache)
+  if (url.origin === location.origin && url.pathname.startsWith("/api/")) {
+    event.respondWith(fetch(req));
+    return;
+  }
+
+  // Apenas GET do mesmo origin pode usar cache
   if (req.method === "GET" && url.origin === location.origin) {
+    // Cache-first para assets estáticos
     event.respondWith(
       caches.match(req).then((cached) => cached || fetch(req))
     );
     return;
   }
 
-  // Network-first para o restante (ex.: chamadas externas futuramente)
+  // Para o resto, tenta rede e, se offline, cai para index.html (SPA fallback)
   event.respondWith(
     fetch(req).catch(() => caches.match("./index.html"))
   );
