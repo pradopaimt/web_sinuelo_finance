@@ -283,13 +283,36 @@
     </section>
 
     <!-- Demonstrativos (APENAS ÁRVORE) -->
-    <section id="demo" class="card" style="display:none">
-      <h2 style="margin-top:0">Demonstrativo Anual/Safra</h2>
-      <div class="small" style="margin: -4px 0 8px 0">Resultado = (Receitas − Despesas). % de cada linha é relativa ao total da Natureza.</div>
-      <div id="demonstrativo_tree"></div>
-      <div id="err"></div>
-      </section>
+  <section id="demo" class="card" style="display:none">
+  <h2 style="margin-top:0">Demonstrativos</h2>
+  <div class="small" style="margin: -4px 8px 8px 0">
+    Resultado = (Receitas − Despesas). % de cada linha é relativa ao total da Natureza.
+  </div>
+
+  <div class="row" style="margin: 8px 0 12px 0;">
+    <label for="visaoDemonstrativos" style="margin-right:8px;color:var(--muted)">Visão:</label>
+    <select id="visaoDemonstrativos">
+      <option value="safra">Safra / Ano</option>
+      <option value="mes">Ano / Mês</option>
+    </select>
+
+    <div style="margin-left:auto; display:flex; gap:6px">
+      <button id="expandAll" class="btn">Expandir tudo</button>
+      <button id="collapseAll" class="btn">Contrair tudo</button>
+    </div>
+  </div>
+
+  <div id="demonstrativo_tree" class="tree"></div>
+  <div id="err" class="small" style="color:#fca5a5"></div>
+</section>
   </main>
+<style>
+  .tree { font-size:14px; color: var(--text); }
+  .tree details { margin:4px 0; }
+  .tree summary { cursor:pointer; user-select:none }
+  .tree .muted { color: var(--muted); font-weight:400 }
+  .tree .value { font-variant-numeric: tabular-nums }
+</style>
 
   <footer>© <span id="ano"></span> Agropecuária Sinuelo • Protótipo</footer>
 
@@ -464,6 +487,7 @@
     if (targetId === 'extrato') renderTabela?.();
     if (targetId === 'categorias') { renderPlanoContas?.(); renderCentrosTable?.(); }
     if (targetId === 'lancamentos') updateKPIs?.();
+	if (targetId === 'demo') updateTreeWidget?.();
   }
 
   function enhanceTabsA11y() {
@@ -579,7 +603,7 @@
   anexoNome: saved.anexo_nome || null
 });
         updateKPIs(); renderTabela(); updateTreeWidget();
-        document.getElementById('formLanc').reset();
+		document.getElementById('formLanc').reset();
         fillNatureza(); fillContas(); fillCentros();
         alert('Lançamento salvo!');
       } else { alert('Erro ao salvar lançamento.'); }
@@ -760,77 +784,33 @@
       renderCentrosTable(); fillCentros(); updateTreeWidget();
     });
 
-  // ===== Demonstrativo — integração com o widget =====
-const NAT_LABEL = { RO:'Receita Operacional', RNO:'Receita Não Operacional', DO:'Despesa Operacional', DNO:'Despesa Não Operacional' };
-
+  // ===== Demonstrativo — Provider para o renderer =====
 function safraLabel(iso){
   const d = new Date(iso + 'T00:00:00'); const y = d.getFullYear(); const m = d.getMonth();
   const ini = (m>=7) ? y : (y-1); const fim = ini+1;
   return String(ini).slice(-2) + '-' + String(fim).slice(-2);
 }
 
-function buildTreeDataForWidget(){
-  // Acumula: natureza -> conta -> categoria
-  const tree = {};
-  for (const x of state.lanc){
-    const natureza = NAT_LABEL[x.natureza] || x.natureza || '(sem natureza)';
-    const conta     = x.conta     || '(sem conta)';
-    const categoria = x.categoria || '(sem categoria)';
-    const centro    = x.centro    || 'Geral';
-    const valor     = Number(x.valor)||0;
-    const ano       = new Date(x.data + 'T00:00:00').getFullYear();
-    const safra     = safraLabel(x.data);
+// O renderer lerá daqui sempre que precisar
+window.DemonstrativoDataProvider = {
+  // itens crus esperados pelo demonstrativo_tree.js
+  getData: () => state.lanc.map(x => ({
+    data: x.data,
+    valor: x.valor,
+    descricao: x.descricao || '',
+    // já calculamos safra/ano aqui para acelerar
+    safra: safraLabel(x.data),
+    ano: new Date(x.data + 'T00:00:00').getFullYear()
+  })),
+  // (hoje não usamos centros no renderer; mantido para evoluções)
+  getCentros: () => state.centros.map(c => c.nome)
+};
 
-    tree[natureza] ??= {};
-    tree[natureza][conta] ??= {};
-    tree[natureza][conta][categoria] ??= { cc:{}, ir:false, ano, safra };
-    tree[natureza][conta][categoria].cc[centro] = (tree[natureza][conta][categoria].cc[centro]||0) + valor;
-    if (x.ir) tree[natureza][conta][categoria].ir = true;
-  }
-
-  // Converte para o formato esperado pelo widget
-  return Object.entries(tree).map(([natureza, contasObj]) => ({
-    natureza,
-    // nível 1: o widget espera "categoria" -> aqui colocamos o NOME DA CONTA
-    items: Object.entries(contasObj).map(([contaNome, categoriasObj]) => ({
-      categoria: contaNome,
-      // nível 2: folhas (cada item é uma "categoria")
-      items: Object.entries(categoriasObj).map(([catNome, meta]) => ({
-        conta: catNome,                     // folha mostra a CATEGORIA
-        ccValues: meta.cc,
-        flags: { impostoRenda: !!meta.ir },
-        periodo: { safra: meta.safra, ano: meta.ano }
-      }))
-    }))
-  }));
+// Sempre que os lançamentos mudarem, pedimos um re-render
+function updateTreeWidget(){
+  try { window.DemonstrativoTree?.refresh?.(); } catch(e){ console.warn(e); }
 }
-  
-  let treeApi = null;
-  function mountTreeWidget(){
-    const costCenters = state.centros.map(c=>c.nome);
-    async function loadData(){ return buildTreeDataForWidget(); }
-    if (window.DemonstrativoTreeWidget && typeof window.DemonstrativoTreeWidget.mount === 'function') {
-      try {
-        treeApi = DemonstrativoTreeWidget.mount('#demonstrativo_tree', { loadData, costCenters });
-      } catch (err) {
-        console.warn('Widget do demonstrativo falhou ao montar:', err);
-        treeApi = null;
-      }
-    } else {
-      console.warn('DemonstrativoTreeWidget indisponível; prosseguindo sem o widget.');
-    }
-  }
 
-  function updateTreeWidget(){
-    if(!treeApi) return;
-    try {
-      const costCenters = state.centros.map(c=>c.nome);
-      const data = buildTreeDataForWidget();
-      treeApi.setData(data, costCenters);
-    } catch (err) {
-      console.warn('Falha ao atualizar o widget:', err);
-    }
-  }
 
     // ===== Exportar / Importar CSV =====
     document.getElementById('exportCsv').addEventListener('click', ()=>{
@@ -888,7 +868,7 @@ const rows = state.lanc.map(x => header.map(h => {
         updateKPIs(); renderTabela();
 
         // Árvore
-        mountTreeWidget(); updateTreeWidget();
+        updateTreeWidget();
       }catch(e){
         const el= document.getElementById('err');
         el.textContent = 'Falha ao carregar dados do demonstrativo.\n- Verifique se a API está acessível em '+API_BASE+'\n- Se estiver usando outro domínio, confira CORS no backend.\nDetalhes: '+ (e && e.message ? e.message : e);
