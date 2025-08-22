@@ -91,28 +91,39 @@
       <div class="card">
         <h2>Novo lançamento</h2>
         <form id="formLanc" autocomplete="off">
-     <!-- 1ª linha: só Data e Natureza -->
+     <!-- 1ª linha: só Data -->
 <div class="row cols-3">
   <div>
     <label for="data">Data</label>
     <input type="date" id="data" required />
   </div>
-  <div>
-    <label for="natureza">Natureza</label>
-    <select id="natureza" required></select>
-  </div>
-</div>
-
-<!-- (mantém as linhas de Conta/Categoria/Centro e Descrição/Pagamento) -->
-
-<!-- NOVA linha no final: Valor -->
+  <div class="row cols-2" style="margin-top:12px">
+            <div>
+              <label for="descricao">Descrição</label>
+              <input id="descricao" placeholder="Ex.: Venda bezerros, ração, adubo..." />
+            </div>
 <div class="row cols-3" style="margin-top:12px">
   <div style="grid-column: 1 / -1">
     <label for="valor">Valor (R$)</label>
     <input inputmode="decimal" id="valor" placeholder="0,00" required />
   </div>
 </div>
-
+  <div>
+              <label for="pagamento">Forma de pagamento</label>
+              <select id="pagamento">
+                <option>Pix</option>
+                <option>Dinheiro</option>
+                <option>Cartão</option>
+                <option>Boleto</option>
+                <option>Transferência</option>
+                <option>Nota a pagar/receber</option>
+              </select>
+            </div>
+  <div>
+    <label for="natureza">Natureza</label>
+    <select id="natureza" required></select>
+  </div>
+</div>
           <div class="row cols-3" style="margin-top:12px">
             <div>
               <label for="conta">Conta</label>
@@ -127,22 +138,7 @@
               <select id="centro"></select>
             </div>
           </div>
-          <div class="row cols-2" style="margin-top:12px">
-            <div>
-              <label for="descricao">Descrição</label>
-              <input id="descricao" placeholder="Ex.: Venda bezerros, ração, adubo..." />
-            </div>
-            <div>
-              <label for="pagamento">Forma de pagamento</label>
-              <select id="pagamento">
-                <option>Pix</option>
-                <option>Dinheiro</option>
-                <option>Cartão</option>
-                <option>Boleto</option>
-                <option>Transferência</option>
-                <option>Nota a pagar/receber</option>
-              </select>
-            </div>
+          
           </div>
           <div class="row" style="margin-top:8px">
             <label class="inline"><input type="checkbox" id="impostoRenda" style="width:auto;margin-right:8px"> Marcar como "Imposto de Renda"</label>
@@ -276,13 +272,7 @@
       <div class="small" style="margin: -4px 0 8px 0">Resultado = (Receitas − Despesas). % de cada linha é relativa ao total da Natureza.</div>
       <div id="demonstrativo_tree"></div>
       <div id="err"></div>
-      <div class="small" style="margin-top:8px">
-        <button id="btnReload" class="secondary">Recarregar da API</button>
-        <button id="btnMock" class="secondary" style="display:none">Usar dados de exemplo</button>
-        <button id="btnTests" class="secondary">Rodar testes</button>
-        <span id="testOut" class="muted"></span>
-      </div>
-    </section>
+      </section>
   </main>
 
   <footer>© <span id="ano"></span> Agropecuária Sinuelo • Protótipo</footer>
@@ -599,46 +589,53 @@
       renderCentrosTable(); fillCentros(); updateTreeWidget();
     });
 
-    // ===== Demonstrativo — integração com o widget =====
-    const NAT_LABEL = { RO:'Receita Operacional', RNO:'Receita Não Operacional', DO:'Despesa Operacional', DNO:'Despesa Não Operacional' };
-   function safraLabel(iso){
-    const d = new Date(iso + 'T00:00:00');
-    const y = d.getFullYear();
-    const m = d.getMonth(); // 0..11
-    const ini = (m>=7) ? y : (y-1);
-    const fim = ini+1;
-    return String(ini).slice(-2) + '-' + String(fim).slice(-2);
+  // ===== Demonstrativo — integração com o widget =====
+const NAT_LABEL = { RO:'Receita Operacional', RNO:'Receita Não Operacional', DO:'Despesa Operacional', DNO:'Despesa Não Operacional' };
+
+function safraLabel(iso){
+  const d = new Date(iso + 'T00:00:00'); const y = d.getFullYear(); const m = d.getMonth();
+  const ini = (m>=7) ? y : (y-1); const fim = ini+1;
+  return String(ini).slice(-2) + '-' + String(fim).slice(-2);
+}
+
+function buildTreeDataForWidget(){
+  // Estrutura de acumulação:
+  // tree[natureza][conta][categoria][centro] = soma
+  const tree = {};
+
+  for (const x of state.lanc){
+    const natureza = NAT_LABEL[x.natureza] || x.natureza || '(sem natureza)';
+    const conta     = x.conta     || '(sem conta)';
+    const categoria = x.categoria || '(sem categoria)';
+    const centro    = x.centro    || 'Geral';
+    const valor     = Number(x.valor)||0;
+    const ano       = new Date(x.data + 'T00:00:00').getFullYear();
+    const safra     = safraLabel(x.data);
+
+    tree[natureza] ??= {};
+    tree[natureza][conta] ??= {};
+    tree[natureza][conta][categoria] ??= { cc:{}, ir:false, ano, safra };
+    tree[natureza][conta][categoria].cc[centro] = (tree[natureza][conta][categoria].cc[centro]||0) + valor;
+    // marca IR se QUALQUER lançamento da categoria tiver IR (simples e suficiente p/ filtro)
+    if (x.ir) tree[natureza][conta][categoria].ir = true;
   }
 
-  function buildTreeDataForWidget(){
-    // Agora: Natureza -> Conta -> Categoria -> folhas (com ccValues)
-    // Mantemos as chaves usadas pelo widget:
-    //   nível 1 usa c.categoria (então colocamos o NOME DA CONTA em "categoria")
-    //   folha usa cta.conta (então colocamos o NOME DA CATEGORIA em "conta")
-    const NAT_LABEL = { RO:'Receita Operacional', RNO:'Receita Não Operacional', DO:'Despesa Operacional', DNO:'Despesa Não Operacional' };
-
-    const tree = {};
-    for (const x of state.lanc) {
-      const natureza = NAT_LABEL[x.natureza] || x.natureza || '(sem natureza)';
-      const contaNome = x.conta || '(sem conta)';        // nível 1
-      const categoriaNome = x.categoria || '(sem categoria)'; // nível 2 (folha)
-      const centro = x.centro || 'Geral';
-      const valor = Number(x.valor) || 0;
-      const ano = new Date(x.data + 'T00:00:00').getFullYear();
-      const safra = safraLabel(x.data);
-
-      tree[natureza] ??= {};
-      tree[natureza][contaNome] ??= {};               // nível 1 = conta
-      tree[natureza][contaNome][categoriaNome] ??= []; // folhas (categorias)
-
-      // Folha: reusamos o campo "conta" para exibir o NOME DA CATEGORIA na UI
-      tree[natureza][contaNome][categoriaNome].push({
-        conta: categoriaNome,                   // mostrado na 3ª coluna da árvore
-        ccValues: { [centro]: valor },
-        flags: { impostoRenda: !!x.ir },
-        periodo: { safra, ano }
-      });
-    }
+  // Converte para o formato do widget (Natureza -> items[] com "categoria" = CONTA)
+  return Object.entries(tree).map(([natureza, contas]) => ({
+    natureza,
+    items: Object.entries(contas).map(([contaNome, categorias]) => ({
+      // nivel 1 do widget chama "categoria", mas aqui guardamos o nome da CONTA
+      categoria: contaNome,
+      // folhas: o widget espera objetos com a chave "conta" — colocamos o NOME DA CATEGORIA aqui
+      items: Object.entries(categorias).map(([catNome, meta]) => ({
+        conta: catNome,                         // <- folha mostra a CATEGORIA
+        ccValues: meta.cc,
+        flags: { impostoRenda: !!meta.ir },
+        periodo: { safra: meta.safra, ano: meta.ano }
+      }))
+    }))
+  }));
+}
 
     // Converte para o formato esperado pelo widget
     return Object.entries(tree).map(([natureza, contasObj]) => ({

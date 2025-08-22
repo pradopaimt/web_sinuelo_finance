@@ -131,15 +131,27 @@
 
     function collectAllRowIds(){ const ids=new Set(); state.data.forEach(n=>{ const nid=`nat-${slugify(n.natureza)}`; ids.add(nid); (n.items||[]).forEach(c=>{ const cid=`${nid}::cat-${slugify(c.categoria)}`; ids.add(cid); (c.items||[]).forEach(cta=>{ ids.add(`${cid}::cta-${slugify(cta.conta)}`); }); }); }); return ids; }
 
-    function row({ id, level, name, total, percent, expandable, isOpen }){
-      const tr=document.createElement('tr'); tr.dataset.id=id; tr.dataset.level=level;
-      const tdName=document.createElement('td'); tdName.className=`sf-name indent-${Math.min(level,3)}`;
-      if(expandable){ const t=document.createElement('span'); t.className='sf-toggle'; t.textContent=isOpen?'−':'+'; t.setAttribute('role','button'); t.setAttribute('aria-expanded',String(isOpen)); t.addEventListener('click',()=>{ if(isOpen) state.expanded.delete(id); else state.expanded.add(id); renderAll(); }); tdName.appendChild(t);} else { const dot=document.createElement('span'); dot.className='sf-badge'; dot.textContent='Categoria'; tdName.appendChild(dot);} const nameSpan=document.createElement('span'); nameSpan.textContent=name; nameSpan.style.fontWeight = level===0? '700' : (level===1? '600' : '500'); nameSpan.style.marginLeft='4px'; tdName.appendChild(nameSpan);
-      const tdTotal=document.createElement('td'); tdTotal.textContent=formatBRL(total); tdTotal.style.textAlign='right'; tdTotal.style.fontWeight= level===0? '700' : '500';
-      const tdPct=document.createElement('td'); tdPct.textContent=`${(percent*100).toFixed(1)}%`; tdPct.style.textAlign='right'; tdPct.style.color='var(--info)';
-      tr.appendChild(tdName); tr.appendChild(tdTotal); tr.appendChild(tdPct); return tr;
-    }
+function row({ id, level, name, total, percent, expandable, isOpen }){
+  const tr=document.createElement('tr'); tr.dataset.id=id; tr.dataset.level=level;
+  const tdName=document.createElement('td'); tdName.className=`sf-name indent-${Math.min(level,3)}`;
 
+  if(expandable){
+    const t=document.createElement('span'); t.className='sf-toggle'; t.textContent=isOpen?'−':'+';
+    t.setAttribute('role','button'); t.setAttribute('aria-expanded',String(isOpen));
+    t.addEventListener('click',()=>{ if(isOpen) state.expanded.delete(id); else state.expanded.add(id); renderAll(); });
+    tdName.appendChild(t);
+  } 
+  const nameSpan=document.createElement('span');
+  nameSpan.textContent=name;
+  nameSpan.style.fontWeight = level===0? '700' : (level===1? '600' : '500');
+  nameSpan.style.marginLeft='4px';
+  tdName.appendChild(nameSpan);
+
+  const tdTotal=document.createElement('td'); tdTotal.textContent=formatBRL(total); tdTotal.style.textAlign='right'; tdTotal.style.fontWeight= level===0? '700' : '500';
+  const tdPct=document.createElement('td'); tdPct.textContent=`${(percent*100).toFixed(1)}%`; tdPct.style.textAlign='right'; tdPct.style.color='var(--info)';
+  tr.appendChild(tdName); tr.appendChild(tdTotal); tr.appendChild(tdPct);
+  return tr;
+}
     function renderTree(){
       refs.tbody.innerHTML=''; let totalReceitas=0, totalDespesas=0;
       state.data.forEach(n=>{
