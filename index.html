@@ -294,7 +294,7 @@
   <footer>© <span id="ano"></span> Agropecuária Sinuelo • Protótipo</footer>
 
   <!-- Widget do demonstrativo -->
-  <script src="demonstrativo_tree.js"></script>
+  <script src="demonstrativo_tree.js" defer></script>
 	<script>  const API_BASE = window.API_BASE; </script>
   <script>
     // ===== PWA =====
@@ -682,19 +682,33 @@ function buildTreeDataForWidget(){
     }))
   }));
 }
-
-    let treeApi = null;
-    function mountTreeWidget(){
-      const costCenters = state.centros.map(c=>c.nome);
-      async function loadData(){ return buildTreeDataForWidget(); }
-      treeApi = DemonstrativoTreeWidget.mount('#demonstrativo_tree', { loadData, costCenters });
+  
+  let treeApi = null;
+  function mountTreeWidget(){
+    const costCenters = state.centros.map(c=>c.nome);
+    async function loadData(){ return buildTreeDataForWidget(); }
+    if (window.DemonstrativoTreeWidget && typeof window.DemonstrativoTreeWidget.mount === 'function') {
+      try {
+        treeApi = DemonstrativoTreeWidget.mount('#demonstrativo_tree', { loadData, costCenters });
+      } catch (err) {
+        console.warn('Widget do demonstrativo falhou ao montar:', err);
+        treeApi = null;
+      }
+    } else {
+      console.warn('DemonstrativoTreeWidget indisponível; prosseguindo sem o widget.');
     }
-    function updateTreeWidget(){
-      if(!treeApi) return;
+  }
+
+  function updateTreeWidget(){
+    if(!treeApi) return;
+    try {
       const costCenters = state.centros.map(c=>c.nome);
       const data = buildTreeDataForWidget();
       treeApi.setData(data, costCenters);
+    } catch (err) {
+      console.warn('Falha ao atualizar o widget:', err);
     }
+  }
 
     // ===== Exportar / Importar CSV =====
     document.getElementById('exportCsv').addEventListener('click', ()=>{
