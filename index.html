@@ -387,10 +387,11 @@ let demoFilterMonth = ''; // '' = sem filtro (safra/ano funcionam no widget)
 
 document.addEventListener('DOMContentLoaded', () => {
   // monta o widget; ele chama loadData() imediatamente
-  demoApi = window.DemonstrativoTreeWidget?.mount('#demonstrativo-tree', {
-    loadData: async () => buildTreeDataFromState(demoFilterMonth),
-    costCenters: (state.centros || []).map(c => c.nome)
-  });
+const ccList = Array.from(new Set(['Geral', ...(state.centros || []).map(c => c.nome)]));
+	demoApi = window.DemonstrativoTreeWidget?.mount('#demonstrativo-tree', {
+	loadData: async () => buildTreeDataFromState(demoFilterMonth),
+	costCenters: ccList
+	});
 
   // Filtro de mês
   const inp = document.getElementById('demoMes');
@@ -398,19 +399,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   inp?.addEventListener('change', () => {
     demoFilterMonth = inp.value || '';
-    if (demoApi) demoApi.setData(
-      buildTreeDataFromState(demoFilterMonth),
-      (state.centros || []).map(c => c.nome)
-    );
+    if (demoApi) {
+    const ccList = Array.from(new Set(['Geral', ...(state.centros || []).map(c => c.nome)]));
+    demoApi.setData(buildTreeDataFromState(demoFilterMonth), ccList);
+  }
   });
 
   btnClear?.addEventListener('click', () => {
     demoFilterMonth = '';
     if (inp) inp.value = '';
-    if (demoApi) demoApi.setData(
-      buildTreeDataFromState(demoFilterMonth),
-      (state.centros || []).map(c => c.nome)
-    );
+    if (demoApi) {
+     const ccList = Array.from(new Set(['Geral', ...(state.centros || []).map(c => c.nome)]));
+     demoApi.setData(buildTreeDataFromState(demoFilterMonth), ccList);
+   }
   });
 });
 
@@ -418,10 +419,8 @@ document.addEventListener('DOMContentLoaded', () => {
 function updateTreeWidget(){
   try{
     if (demoApi) {
-      demoApi.setData(
-        buildTreeDataFromState(demoFilterMonth),
-        (state.centros || []).map(c => c.nome)
-      );
+      const ccList = Array.from(new Set(['Geral', ...(state.centros || []).map(c => c.nome)]));
+     demoApi.setData(buildTreeDataFromState(demoFilterMonth), ccList);
     }
   }catch(e){ console.warn(e); }
 }

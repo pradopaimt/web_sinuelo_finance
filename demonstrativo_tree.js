@@ -67,16 +67,24 @@
       resPct: el.querySelector('#sf-resultado-pct'),
     };
 
-    function setData(data, ccList){
-      state.data = Array.isArray(data)? data : [];
-      state.costCenters = ccList && ccList.length? ccList : extractCostCenters(state.data);
-      state.selectedCCs = new Set(state.costCenters);
-      const { safras, anos } = discoverSafrasAndAnos(state.data);
-      state.periodType = safras.length? 'safra' : (anos.length? 'ano' : 'safra');
-      state.periodValue = state.periodType==='safra'? (safras[0]||'') : (anos[0]||'');
-      state.expanded.clear();
-      renderAll();
-    }
+function setData(data, ccList){
+  state.data = Array.isArray(data) ? data : [];
+
+  // CCs descobertos nas folhas (ccValues):
+  const discovered = extractCostCenters(state.data);
+
+  // Une: (lista externa) + (descobertos) + "Geral" e remove duplicadas:
+  const merged = Array.from(new Set([...(ccList || []), ...discovered, 'Geral']));
+
+  state.costCenters = merged;
+  state.selectedCCs = new Set(state.costCenters);
+
+  const { safras, anos } = discoverSafrasAndAnos(state.data);
+  state.periodType = safras.length ? 'safra' : (anos.length ? 'ano' : 'safra');
+  state.periodValue = state.periodType === 'safra' ? (safras[0] || '') : (anos[0] || '');
+  state.expanded.clear();
+  renderAll();
+}
 
     function renderAll(){ renderControls(); renderKPIs(); renderTree(); }
 
@@ -119,15 +127,15 @@
     function populatePeriodOptions(sel){ sel.innerHTML=''; const {safras, anos}=discoverSafrasAndAnos(state.data); const arr = state.periodType==='safra'? safras : anos; arr.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); }); state.periodValue = arr[0]||''; }
 
 function renderKPIs(){
-+   refs.kpis.innerHTML='';
-+   state.data.forEach(n=>{
-+     const total = calcNodeTotal(n, state.selectedCCs, state);
-+     const box = document.createElement('div');
-+     box.className = 'box';
-+     box.innerHTML = `<h3>${n.natureza}</h3><div>${formatBRL(total)}</div>`;
-+     refs.kpis.appendChild(box);
-+   });
-+ }
+	refs.kpis.innerHTML='';
+	state.data.forEach(n=>{
+	const total = calcNodeTotal(n, state.selectedCCs, state);
+	const box = document.createElement('div');
+	box.className = 'box';
+	box.innerHTML = `<h3>${n.natureza}</h3><div>${formatBRL(total)}</div>`;
+	refs.kpis.appendChild(box);
+	});
+	}
 
     function collectAllRowIds(){ const ids=new Set(); state.data.forEach(n=>{ const nid=`nat-${slugify(n.natureza)}`; ids.add(nid); (n.items||[]).forEach(c=>{ const cid=`${nid}::cat-${slugify(c.categoria)}`; ids.add(cid); (c.items||[]).forEach(cta=>{ ids.add(`${cid}::cta-${slugify(cta.conta)}`); }); }); }); return ids; }
 
