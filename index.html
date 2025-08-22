@@ -115,15 +115,15 @@
         </div>
       </div>
 
-      <!-- Linha 2: Descrição, Fornecedor/Cliente -->
+      <!-- Linha 2: Descrição, Fornecedor_Cliente -->
       <div class="row cols-2" style="margin-top:12px">
         <div>
           <label for="descricao">Descrição</label>
           <input id="descricao" placeholder="Ex.: Venda bezerros, ração, adubo..." />
         </div>
         <div>
-          <label for="fornecedorCliente">Fornecedor/Cliente</label>
-          <input id="fornecedorCliente" placeholder="Digite o nome do fornecedor ou cliente" />
+          <label for="fornecedor_cliente">Fornecedor_Cliente</label>
+          <input id="fornecedor_cliente" placeholder="Digite o nome do fornecedor ou cliente" />
         </div>
       </div>
 
@@ -214,7 +214,7 @@
 			  <th>Conta</th>
               <th>Categoria</th>
               <th>Centro</th>
-			  <th>Fornecedor/Cliente</th>
+			  <th>Fornecedor_Cliente</th>
 			  <th>Descrição</th>
               <th>Valor</th>
               <th>Pagamento</th>
@@ -296,7 +296,7 @@
 
   <!-- Widget do demonstrativo -->
   <script src="demonstrativo_tree.js"></script>
-
+	<script>  const API_BASE = window.API_BASE; </script>
   <script>
     // ===== PWA =====
     if('serviceWorker' in navigator){ window.addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js').catch(console.warn)); }
@@ -425,7 +425,7 @@
       data: document.getElementById('data'),
       valor: document.getElementById('valor'),
       descricao: document.getElementById('descricao'),
-	  fornecedor_cliente: document.getElementById('fornecedorCliente'),
+	  fornecedor_cliente: document.getElementById('fornecedor_cliente'),
       pagamento: document.getElementById('pagamento'),
       ir: document.getElementById('impostoRenda'),
       anexo: document.getElementById('anexo')
@@ -457,12 +457,20 @@
         const acc = nat?.contas.find(c => c.id === saved.conta_id);
         const cat = acc?.cats_full.find(c => c.id === saved.categoria_id);
         const centre = state.centros.find(c => c.id === saved.centro_id);
-        state.lanc.unshift({
-          id: saved.id, data: saved.data, natureza: saved.natureza_code,
-          conta: acc?.nome || '', categoria: cat?.nome || '', centro: centre?.nome || '',
-          pagamento: saved.pagamento, descricao: saved.descricao, ir: saved.ir, valor: Number(saved.valor)||0,
-          anexoNome: saved.anexo_nome || null
-        });
+   state.lanc.unshift({
+  id: saved.id,
+  data: saved.data,
+  natureza: saved.natureza_code,
+  conta: acc?.nome || '',
+  categoria: cat?.nome || '',
+  centro: centre?.nome || '',
+  pagamento: saved.pagamento,
+  descricao: saved.descricao,
+  fornecedor_cliente: saved.fornecedor_cliente || '',
+  ir: saved.ir,
+  valor: Number(saved.valor)||0,
+  anexoNome: saved.anexo_nome || null
+});
         updateKPIs(); renderTabela(); updateTreeWidget();
         document.getElementById('formLanc').reset();
         fillNatureza(); fillContas(); fillCentros();
@@ -507,8 +515,8 @@
 	<td>${x.centro||'-'}</td>
 	<td>${x.fornecedor_cliente||'-'}</td>
 	<td>${x.descricao||'-'}</td>
-	<td>${x.pagamento||'-'}</td>
 	<td style="font-weight:700">${BRL.format(x.valor)}</td>
+	<td>${x.pagamento||'-'}</td>
 	<td style="text-align:right">
     <button class="secondary" onclick="editar('${x.id}')">Editar</button>
     <button class="danger" onclick="excluir('${x.id}')">Excluir</button>
@@ -657,16 +665,15 @@ function buildTreeDataForWidget(){
     if (x.ir) tree[natureza][conta][categoria].ir = true;
   }
 
-  // Converte para o formato do widget:
-  // nível 0: natureza
-  // nível 1 (campo "categoria"): **NOME DA CONTA**
-  // folhas (campo "conta"): **NOME DA CATEGORIA**
-  return Object.entries(tree).map(([natureza, contas]) => ({
+  // Converte para o formato esperado pelo widget
+  return Object.entries(tree).map(([natureza, contasObj]) => ({
     natureza,
-    items: Object.entries(contas).map(([contaNome, categorias]) => ({
-      categoria: contaNome, // aparece como linha do meio
-      items: Object.entries(categorias).map(([catNome, meta]) => ({
-        conta: catNome,                 // folha mostra a CATEGORIA
+    // nível 1: o widget espera "categoria" -> aqui colocamos o NOME DA CONTA
+    items: Object.entries(contasObj).map(([contaNome, categoriasObj]) => ({
+      categoria: contaNome,
+      // nível 2: folhas (cada item é uma "categoria")
+      items: Object.entries(categoriasObj).map(([catNome, meta]) => ({
+        conta: catNome,                     // folha mostra a CATEGORIA
         ccValues: meta.cc,
         flags: { impostoRenda: !!meta.ir },
         periodo: { safra: meta.safra, ano: meta.ano }
@@ -675,17 +682,6 @@ function buildTreeDataForWidget(){
   }));
 }
 
-    // Converte para o formato esperado pelo widget
-    return Object.entries(tree).map(([natureza, contasObj]) => ({
-      natureza,
-      // nível 1: o widget espera "categoria" -> aqui colocamos o NOME DA CONTA
-      items: Object.entries(contasObj).map(([contaNome, categoriasObj]) => ({
-        categoria: contaNome,
-        // nível 2: folhas (cada item é uma "categoria")
-        items: Object.entries(categoriasObj).flatMap(([categoriaNome, folhas]) => folhas)
-      }))
-    }));
-  }
     let treeApi = null;
     function mountTreeWidget(){
       const costCenters = state.centros.map(c=>c.nome);
@@ -701,10 +697,11 @@ function buildTreeDataForWidget(){
 
     // ===== Exportar / Importar CSV =====
     document.getElementById('exportCsv').addEventListener('click', ()=>{
-      const header=['id','data','natureza','conta','categoria','descricao','centro','pagamento','ir','valor'];
-      const rows=state.lanc.map(x=> header.map(h=>{
-        const v=x[h]??''; return typeof v==='number'? String(v).replace('.',',') : String(v).replace(/"/g,'""');
-      }));
+const header = ['id','data','natureza','conta','categoria','descricao','fornecedor_cliente','centro','pagamento','ir','valor'];
+const rows = state.lanc.map(x => header.map(h => {
+  const v = x[h] ?? '';
+  return typeof v === 'number' ? String(v).replace('.',',') : String(v).replace(/"/g,'""');
+}));
       const csv=[header.join(';')].concat(rows.map(r=> r.join(';'))).join('\n');
       const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a');
       a.href=URL.createObjectURL(blob); a.download='sinuelo_finance.csv'; a.click();
@@ -716,12 +713,20 @@ function buildTreeDataForWidget(){
         const lines=reader.result.split(/\r?\n/).filter(Boolean); const header=lines.shift().split(';'); const idx=(name)=> header.indexOf(name);
         const arr=lines.map(l=>{
           const c=l.split(';');
-          return {
-            id:c[idx('id')]||crypto.randomUUID(), data:c[idx('data')], natureza:c[idx('natureza')]||c[idx('tipo')],
-            conta:c[idx('conta')], categoria:c[idx('categoria')], descricao:c[idx('descricao')], centro:c[idx('centro')],
-            pagamento:c[idx('pagamento')], ir: ((c[idx('ir')]||'').toLowerCase()=='true' || c[idx('ir')]=='1'),
-            valor: parseBR(c[idx('valor')]||'0')
-          };
+     return {
+  id: c[idx('id')]||crypto.randomUUID(),
+  data: c[idx('data')],
+  natureza: c[idx('natureza')]||c[idx('tipo')],
+  conta: c[idx('conta')],
+  categoria: c[idx('categoria')],
+  descricao: c[idx('descricao')],
+  fornecedor_cliente: c[idx('fornecedor_cliente')] || '',
+  centro: c[idx('centro')],
+  pagamento: c[idx('pagamento')],
+  ir: ((c[idx('ir')]||'').toLowerCase()=='true' || c[idx('ir')]=='1'),
+  valor: parseBR(c[idx('valor')]||'0')
+};
+
         });
         state.lanc=arr.concat(state.lanc);
         updateKPIs(); renderTabela(); updateTreeWidget();
@@ -751,59 +756,19 @@ function buildTreeDataForWidget(){
         const el= document.getElementById('err');
         el.textContent = 'Falha ao carregar dados do demonstrativo.\n- Verifique se a API está acessível em '+API_BASE+'\n- Se estiver usando outro domínio, confira CORS no backend.\nDetalhes: '+ (e && e.message ? e.message : e);
         el.style.display='block';
-        document.getElementById('btnMock').style.display='inline-flex';
+        document.getElementById('btnMock')?.style.display='inline-flex';
       }
     }
 
-    // ===== Mock + Testes mínimos =====
-    function loadMock(){
-      state.centros = [{id:'c1',nome:'Geral'},{id:'c2',nome:'Soja'},{id:'c3',nome:'Bovinos'}];
-      state.tax = [
-        {code:'RO', nome:'RECEITAS OPERACIONAIS', contas:[{id:'a1',nome:'AGRICULTURA',cats:[],cats_full:[]}]},
-        {code:'DO', nome:'DESPESAS OPERACIONAIS', contas:[{id:'a2',nome:'GRÃOS',cats:[],cats_full:[]}]} 
-      ];
-      state.lanc = [
-        {id:'1', data:'2024-08-20', natureza:'RO', conta:'AGRICULTURA', categoria:'SOJA', centro:'Soja', valor: 25000, ir:false},
-        {id:'2', data:'2024-09-05', natureza:'DO', conta:'GRÃOS', categoria:'SEMENTES', centro:'Soja', valor: 6000,  ir:false},
-        {id:'3', data:'2025-01-10', natureza:'DO', conta:'GRÃOS', categoria:'HERBICIDAS', centro:'Soja', valor: 3000,  ir:true},
-        {id:'4', data:'2025-03-01', natureza:'RO', conta:'AGRICULTURA', categoria:'SOJA', centro:'Geral', valor: 12000, ir:true},
-        {id:'5', data:'2025-05-15', natureza:'RO', conta:'AGRICULTURA', categoria:'MILHO', centro:'Bovinos', valor: 8000, ir:false}
-      ];
-      updateKPIs(); renderTabela(); renderPlanoContas(); renderCentrosTable(); 
-      if(!treeApi) mountTreeWidget(); updateTreeWidget();
-    }
-    function assert(cond, msg){ if(!cond) throw new Error(msg); }
-    function runTests(){
-      const saved = {centros:[...state.centros], tax:[...state.tax], lanc:[...state.lanc]};
-      try{
-        loadMock();
-        const data = buildTreeDataForWidget();
-        // 1) Deve haver naturezas Receita e Despesa
-        const nats = data.map(n=>n.natureza);
-        assert(nats.some(x=>/Receita/i.test(x)), 'Deve haver Receita');
-        assert(nats.some(x=>/Despesa/i.test(x)), 'Deve haver Despesa');
-        // 2) Cada folha precisa de periodo e flags para o widget filtrar
-        const umaConta = data.flatMap(n=>n.items).flatMap(c=>c.items)[0];
-        assert(umaConta.ccValues && umaConta.flags && umaConta.periodo, 'Nós folha precisam ccValues/flags/periodo');
-        document.getElementById('testOut').textContent = '✅ Testes OK';
-      }catch(e){
-        document.getElementById('testOut').textContent = '❌ Falhou: ' + (e.message||e);
-      } finally {
-        state.centros = saved.centros; state.tax = saved.tax; state.lanc = saved.lanc;
-        try{ updateTreeWidget(); }catch(_){}
-      }
-    }
-
-    // ===== Inicialização =====
+// ===== Inicialização =====
     document.getElementById('ano').textContent = new Date().getFullYear();
     document.getElementById('data').value = new Date().toISOString().slice(0,10);
     // listeners
     window.addEventListener('DOMContentLoaded', ()=>{
       // carrega dados reais
       loadData();
-      // preencher selects de forma otimista (atualiza depois do load)
       fillNatureza(); fillContas(); fillCentros();
-    });
+	  
   </script>
 </body>
 </html>
