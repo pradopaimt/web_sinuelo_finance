@@ -394,30 +394,126 @@
     }
 
     // ===== Helpers de selects =====
+ function fillNatureza(){
     const elNat = document.getElementById('natureza');
+    if (!elNat) return;
+    elNat.innerHTML='';
+    state.tax.forEach(n=>{
+      const o=document.createElement('option');
+      o.value=n.code; o.textContent=`${n.code} — ${n.nome}`;
+      elNat.appendChild(o);
+    });
+  }
+  function getNat(){
+    const elNat = document.getElementById('natureza');
+    return state.tax.find(n=> n.code === elNat?.value);
+  }
+  function fillContas(){
+    const elConta = document.getElementById('conta');
+    if (!elConta) return;
+    elConta.innerHTML='';
+    const nat=getNat();
+    nat?.contas.forEach(c=>{
+      const o=document.createElement('option');
+      o.value=c.nome; o.textContent=c.nome;
+      elConta.appendChild(o);
+    });
+    fillCategorias();
+  }
+  function fillCategorias(){
     const elConta = document.getElementById('conta');
     const elCat = document.getElementById('categoria');
+    if (!elCat) return;
+    elCat.innerHTML='';
+    const nat=getNat();
+    const conta = nat?.contas.find(c=> c.nome===elConta?.value);
+    conta?.cats.forEach(cn=>{
+      const o=document.createElement('option');
+      o.value=cn; o.textContent=cn;
+      elCat.appendChild(o);
+    });
+  }
+  function fillCentros(){
     const elCentro = document.getElementById('centro');
-    function fillNatureza(){ elNat.innerHTML=''; state.tax.forEach(n=>{ const o=document.createElement('option'); o.value=n.code; o.textContent=`${n.code} — ${n.nome}`; elNat.appendChild(o); }); }
-    function getNat(){ return state.tax.find(n=> n.code===elNat.value) }
-    function fillContas(){ elConta.innerHTML=''; const nat=getNat(); nat?.contas.forEach(c=>{ const o=document.createElement('option'); o.value=c.nome; o.textContent=c.nome; elConta.appendChild(o); }); fillCategorias(); }
-    function fillCategorias(){ elCat.innerHTML=''; const nat=getNat(); const conta = nat?.contas.find(c=> c.nome===elConta.value); conta?.cats.forEach(cn=>{ const o=document.createElement('option'); o.value=cn; o.textContent=cn; elCat.appendChild(o); }); }
-    function fillCentros(){ elCentro.innerHTML=''; state.centros.forEach(c=>{ const o=document.createElement('option'); o.value=c.nome; o.textContent=c.nome; elCentro.appendChild(o); }); }
-    elNat.addEventListener('change', fillContas);
-    elConta.addEventListener('change', fillCategorias);
-
+    if (!elCentro) return;
+    elCentro.innerHTML='';
+    state.centros.forEach(c=>{
+      const o=document.createElement('option');
+      o.value=c.nome; o.textContent=c.nome;
+      elCentro.appendChild(o);
+    });
+  }
     // ===== Tabs =====
+  function activateTab(targetId) {
+    const sections = ['lancamentos', 'extrato', 'categorias', 'demo'];
     const tabs = document.querySelectorAll('.tab');
-    const sections = ['lancamentos','extrato','categorias','demo'];
-    tabs.forEach(t=> t.addEventListener('click', ()=>{
-      tabs.forEach(x=>x.classList.remove('active'));
-      t.classList.add('active');
-      sections.forEach(id => document.getElementById(id).style.display = id===t.dataset.tab ? (id==='lancamentos'?'grid':'block') : 'none');
-      if(t.dataset.tab==='extrato') renderTabela();
-      if(t.dataset.tab==='categorias') { renderPlanoContas(); renderCentrosTable(); }
-      if(t.dataset.tab==='lancamentos') updateKPIs();
-      // demo não precisa de nada — o widget tem seus próprios controles
-    }));
+
+    tabs.forEach(x => {
+      x.classList.toggle('active', x.dataset.tab === targetId);
+    });
+
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.display = (id === targetId)
+        ? (id === 'lancamentos' ? 'grid' : 'block')
+        : 'none';
+    });
+
+    // ganchos ao entrar na aba
+    if (targetId === 'extrato') renderTabela?.();
+    if (targetId === 'categorias') { renderPlanoContas?.(); renderCentrosTable?.(); }
+    if (targetId === 'lancamentos') updateKPIs?.();
+  }
+
+  function enhanceTabsA11y() {
+    document.querySelectorAll('.tab').forEach(t => {
+      t.setAttribute('role', 'button');
+      t.setAttribute('tabindex', '0');
+      t.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          activateTab(t.dataset.tab);
+        }
+      });
+    });
+  }
+
+  // ===== Inicialização segura =====
+  window.addEventListener('DOMContentLoaded', () => {
+    // 1) Preparar tabs com delegação de eventos
+    const nav = document.querySelector('nav');
+    if (nav) {
+      nav.addEventListener('click', (e) => {
+        const t = e.target.closest('.tab');
+        if (!t) return;
+        activateTab(t.dataset.tab);
+      });
+    }
+    enhanceTabsA11y();
+
+    // 2) Conectar listeners dos selects de forma segura
+    const elNat   = document.getElementById('natureza');
+    const elConta = document.getElementById('conta');
+    const elCat   = document.getElementById('categoria');
+    const elCentro= document.getElementById('centro');
+
+    if (elNat)   elNat.addEventListener('change', () => { fillContas?.(); });
+    if (elConta) elConta.addEventListener('change', () => { fillCategorias?.(); });
+
+    // 3) Data/ano padrão (idempotente)
+    const ano = document.getElementById('ano');
+    if (ano) ano.textContent = new Date().getFullYear();
+    const dataInput = document.getElementById('data');
+    if (dataInput && !dataInput.value) dataInput.value = new Date().toISOString().slice(0,10);
+
+    // 4) Carregar dados (com try/catch já existente em loadData)
+    // Se der erro no backend, a UI (abas) continua funcional
+    loadData?.();
+
+    // 5) Ativar aba inicial explicitamente (evita ficar com display none, se algo mudou)
+    activateTab('lancamentos');
+  });
 
     // ===== Form Lançamento =====
     const elForm = {
@@ -433,23 +529,35 @@
       const raw=e.target.value.replace(/[^\d]/g,''); const num=(Number(raw)/100).toFixed(2);
       e.target.value = num.replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     });
-    document.getElementById('formLanc').addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const dataStr = elForm.data.value || new Date().toISOString().slice(0,10);
-      const natCode = elNat.value, accName = elConta.value||'', catName = elCat.value||'', centreName = elCentro.value||'Geral';
-      const nat = state.tax.find(n => n.code === natCode);
-      const acc = nat?.contas.find(c => c.nome === accName);
-      const cat = acc?.cats_full.find(cat => cat.nome === catName);
-      const centre = state.centros.find(c => c.nome === centreName);
-      const payload = {
-        data: dataStr, natureza_code: natCode,
-        conta_id: acc ? acc.id : null, categoria_id: cat ? cat.id : null, centro_id: centre ? centre.id : null,
-		pagamento: elForm.pagamento.value || '',
-		descricao: elForm.descricao.value || '',
-		fornecedor_cliente: elForm.fornecedor_cliente.value || '',
-		ir: !!elForm.ir?.checked,
-        valor: parseBR(elForm.valor.value), anexoNome: elForm.anexo.files[0]?.name || null
-      };
+   document.getElementById('formLanc').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const dataStr = elForm.data.value || new Date().toISOString().slice(0,10);
+
+  const natEl    = document.getElementById('natureza');
+  const contaEl  = document.getElementById('conta');
+  const catEl    = document.getElementById('categoria');
+  const centroEl = document.getElementById('centro');
+
+  const natCode    = natEl?.value;
+  const accName    = contaEl?.value || '';
+  const catName    = catEl?.value || '';
+  const centreName = centroEl?.value || 'Geral';
+
+  const nat   = state.tax.find(n => n.code === natCode);
+  const acc   = nat?.contas.find(c => c.nome === accName);
+  const cat   = acc?.cats_full.find(cat => cat.nome === catName);
+  const centre= state.centros.find(c => c.nome === centreName);
+
+  const payload = {
+    data: dataStr, natureza_code: natCode,
+    conta_id: acc ? acc.id : null, categoria_id: cat ? cat.id : null, centro_id: centre ? centre.id : null,
+    pagamento: elForm.pagamento.value || '',
+    descricao: elForm.descricao.value || '',
+    fornecedor_cliente: elForm.fornecedor_cliente.value || '',
+    ir: !!elForm.ir?.checked,
+    valor: parseBR(elForm.valor.value),
+    anexoNome: elForm.anexo.files[0]?.name || null
+  };
       const saved = await postLancamento(payload);
       if(saved){
         const nat = state.tax.find(n => n.code === saved.natureza_code);
@@ -526,18 +634,32 @@
       });
     }
     window.editar = async (id)=>{
-      const x=state.lanc.find(i=>i.id===id); if(!x) return;
-      await removeLancamento(id);
-      state.lanc=state.lanc.filter(i=> i.id!==id);
-      updateKPIs(); renderTabela(); updateTreeWidget();
-      document.querySelector('[data-tab="lancamentos"]').click();
-      elForm.data.value=x.data; elNat.value=x.natureza; fillContas();
-      elConta.value=x.conta;  fillCategorias(); elCat.value=x.categoria;
-      elForm.valor.value=BRL.format(x.valor).replace('R$\xa0','').trim();
-      fillCentros(); elCentro.value=x.centro; elForm.pagamento.value=x.pagamento;
-      elForm.fornecedor_cliente.value = x.fornecedor_cliente || '';
-	  elForm.descricao.value=x.descricao; elForm.ir.checked=!!x.ir;
-    }
+  const x=state.lanc.find(i=>i.id===id); if(!x) return;
+  await removeLancamento(id);
+  state.lanc=state.lanc.filter(i=> i.id!==id);
+  updateKPIs(); renderTabela(); updateTreeWidget();
+
+  // volta para a aba Lançamentos
+  document.querySelector('[data-tab="lancamentos"]')?.click();
+
+  // preencher form
+  const natEl    = document.getElementById('natureza');
+  const contaEl  = document.getElementById('conta');
+  const catEl    = document.getElementById('categoria');
+  const centroEl = document.getElementById('centro');
+
+  elForm.data.value = x.data;
+  if (natEl){ natEl.value = x.natureza; fillContas(); }
+  if (contaEl){ contaEl.value = x.conta; fillCategorias(); }
+  if (catEl){ catEl.value = x.categoria; }
+  elForm.valor.value = BRL.format(x.valor).replace('R$\xa0','').trim();
+  fillCentros();
+  if (centroEl){ centroEl.value = x.centro; }
+  elForm.pagamento.value = x.pagamento || '';
+  elForm.fornecedor_cliente.value = x.fornecedor_cliente || '';
+  elForm.descricao.value = x.descricao || '';
+  elForm.ir.checked = !!x.ir;
+}
     window.excluir = async (id)=>{
       if(!confirm('Excluir este lançamento?')) return;
       await removeLancamento(id);
@@ -771,18 +893,9 @@ const rows = state.lanc.map(x => header.map(h => {
         const el= document.getElementById('err');
         el.textContent = 'Falha ao carregar dados do demonstrativo.\n- Verifique se a API está acessível em '+API_BASE+'\n- Se estiver usando outro domínio, confira CORS no backend.\nDetalhes: '+ (e && e.message ? e.message : e);
         el.style.display='block';
-        document.getElementById('btnMock')?.style.display='inline-flex';
-      }
+       }
     }
 
-// ===== Inicialização =====
-    document.getElementById('ano').textContent = new Date().getFullYear();
-    document.getElementById('data').value = new Date().toISOString().slice(0,10);
-    // listeners
-    window.addEventListener('DOMContentLoaded', ()=>{
-      // carrega dados reais
-      loadData();
-   });	  
   </script>
 </body>
 </html>
