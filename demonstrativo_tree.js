@@ -20,9 +20,21 @@
   const formatBRL = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const slugify = str => String(str).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'-').toLowerCase();
   function extractCostCenters(data){ const set = new Set(); const walk=n=>{ if(n.ccValues) Object.keys(n.ccValues).forEach(cc=>set.add(cc)); if(n.items) n.items.forEach(walk); }; data.forEach(walk); return Array.from(set).sort(); }
-  function passesFilters(node, st){ if(st.filterIR && node.ccValues && !(node.flags && node.flags.impostoRenda)) return false; if(node.ccValues && st.periodType && st.periodValue){ if(!node.periodo) return false; if(st.periodType==='safra' && node.periodo.safra!==st.periodValue) return false; if(st.periodType==='ano' && String(node.periodo.ano)!==String(st.periodValue)) return false; } return true; }
+function passesFilters(node, st) {
+  if (st.filterIR && node.ccValues && !(node.flags && node.flags.impostoRenda)) return false;
+  if (node.ccValues && st.periodType && st.periodValue) {
+    if (st.periodType === 'safra' && node.periodo.safra !== st.periodValue) return false;
+    if (st.periodType === 'ano' && String(node.periodo.ano) !== String(st.periodValue)) return false;
+    if (st.periodType === 'mes' && node.periodo.mes !== st.periodValue) return false;
+  }
+  return true;
+}
+  
   function calcNodeTotal(node, selectedCCs, st){ if(!passesFilters(node,st)) return 0; if(node.ccValues){ return Object.entries(node.ccValues).filter(([cc])=>selectedCCs.has(cc)).reduce((s,[,v])=>s+(Number(v)||0),0);} if(node.items){ return node.items.reduce((s,ch)=>s+calcNodeTotal(ch,selectedCCs,st),0);} return 0; }
-  function discoverSafrasAndAnos(data){ const safras=new Set(), anos=new Set(); const walk=n=>{ if(n.periodo){ if(n.periodo.safra) safras.add(n.periodo.safra); if(n.periodo.ano) anos.add(String(n.periodo.ano)); } if(n.items) n.items.forEach(walk); }; data.forEach(walk); return {safras:[...safras].sort(), anos:[...anos].sort()}; }
+  function discoverSafrasAndAnos(data){ 
+	const safras=new Set(), anos=new Set(), meses = new Set(); 
+	const walk=n=>{ if(n.periodo){ if(n.periodo.safra) safras.add(n.periodo.safra); if(n.periodo.ano) anos.add(String(n.periodo.ano)); if(n.periodo.mes) meses.add(n.periodo.mes); } if(n.items) n.items.forEach(walk); }; 
+		data.forEach(walk); return {safras:[...safras].sort(), anos:[...anos].sort(), meses: [...meses].sort()}; }
 
   function ensureStyle(){ if(document.getElementById('sf-tree-style')) return; const s=document.createElement('style'); s.id='sf-tree-style'; s.textContent=CSS; document.head.appendChild(s); }
 
@@ -81,7 +93,7 @@
       state.costCenters = ccList && ccList.length? ccList : extractCostCenters(state.data);
       state.selectedCCs = new Set(state.costCenters);
       const { safras, anos } = discoverSafrasAndAnos(state.data);
-      state.periodType = safras.length? 'safra' : (anos.length? 'ano' : 'safra');
+      state.periodType = safras.length ? 'safra' : (anos.length ? 'ano' : (meses.length ? 'mes' : 'safra'));
       state.periodValue = state.periodType==='safra'? (safras[0]||'') : (anos[0]||'');
       state.expanded.clear();
       renderAll();
@@ -102,10 +114,17 @@
 
       // Período
       const gP = document.createElement('div'); gP.className='sf-group';
-      gP.innerHTML = `<span class="title">Período</span>
-        <label class="sf-pill"><input type="radio" name="sf-period" value="safra" ${state.periodType==='safra'?'checked':''}/> Safra</label>
-        <label class="sf-pill"><input type="radio" name="sf-period" value="ano" ${state.periodType==='ano'?'checked':''}/> Ano</label>
-        <select id="sf-period" class="sf-select"></select>`;
+     gP.innerHTML = `<span class="title">Período</span>
+		<label class="sf-pill">
+		<input type="radio" name="sf-period" value="safra" ${state.periodType==='safra'?'checked':''}/> Safra
+		</label>
+		<label class="sf-pill">
+		<input type="radio" name="sf-period" value="ano" ${state.periodType==='ano'?'checked':''}/> Ano
+		</label>
+		<label class="sf-pill">
+		<input type="radio" name="sf-period" value="mes" ${state.periodType==='mes'?'checked':''}/> Mês
+		</label>
+		<select id="sf-period" class="sf-select"></select>`;
       elc.appendChild(gP);
       gP.querySelectorAll('input[name="sf-period"]').forEach(r=>r.addEventListener('change',e=>{ state.periodType=e.target.value; populatePeriodOptions(gP.querySelector('#sf-period')); renderAll(); }));
       populatePeriodOptions(gP.querySelector('#sf-period'));
@@ -125,7 +144,16 @@
       gX.appendChild(ex); gX.appendChild(cl); elc.appendChild(gX);
     }
 
-    function populatePeriodOptions(sel){ sel.innerHTML=''; const {safras, anos}=discoverSafrasAndAnos(state.data); const arr = state.periodType==='safra'? safras : anos; arr.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); }); state.periodValue = arr[0]||''; }
+    function populatePeriodOptions(sel){ 
+		sel.innerHTML=''; const {safras, anos, meses} = discoverSafrasAndAnos(state.data); 
+		let arr = []; 
+		if(state.periodType==='safra') arr = safras; 
+		else if (state.periodType === 'ano') arr = anos;
+		else if (state.periodType === 'mes') arr = meses;
+		arr.forEach(v => { const o=document.createElement('option'); o.value=v; 
+			   o.textContent = state.periodType === 'mes'
+			? new Date(v + "-01").toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+			: v; sel.appendChild(o);}); state.periodValue = arr[0] || '';}
 
     function renderKPIs(){ refs.kpis.innerHTML=''; state.data.forEach(n=>{ const total=calcNodeTotal(n,state.selectedCCs,state); const d=document.createElement('div'); d.className='box'; d.innerHTML=`<h3>${n.natureza}</h3><div>${formatBRL(total)}</div>`; const wrap=document.createElement('div'); wrap.className='box'; wrap.innerHTML = `<h3>${n.natureza}</h3><div>${formatBRL(total)}</div>`; refs.kpis.appendChild(wrap); }); }
 
