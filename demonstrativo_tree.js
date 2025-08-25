@@ -92,10 +92,15 @@ function passesFilters(node, st) {
       state.data = Array.isArray(data)? data : [];
       state.costCenters = ccList && ccList.length? ccList : extractCostCenters(state.data);
       state.selectedCCs = new Set(state.costCenters);
-      const { safras, anos } = discoverSafrasAndAnos(state.data);
-      state.periodType = safras.length ? 'safra' : (anos.length ? 'ano' : (meses.length ? 'mes' : 'safra'));
-      state.periodValue = state.periodType==='safra'? (safras[0]||'') : (anos[0]||'');
-      state.expanded.clear();
+	const { safras, anos, meses } = discoverSafrasAndAnos(state.data);
+	state.periodType = safras.length ? 'safra': (anos.length ? 'ano' : (meses.length ? 'mes' : 'safra'));
+
+	state.periodValue =
+	state.periodType === 'safra' ? (safras[0] || '') :
+	state.periodType === 'ano'   ? (anos[0]   || '') :
+	state.periodType === 'mes'   ? (meses[0]  || '') :
+  '';
+ state.expanded.clear();
       renderAll();
     }
 
@@ -144,16 +149,29 @@ function passesFilters(node, st) {
       gX.appendChild(ex); gX.appendChild(cl); elc.appendChild(gX);
     }
 
-    function populatePeriodOptions(sel){ 
-		sel.innerHTML=''; const {safras, anos, meses} = discoverSafrasAndAnos(state.data); 
-		let arr = []; 
-		if(state.periodType==='safra') arr = safras; 
-		else if (state.periodType === 'ano') arr = anos;
-		else if (state.periodType === 'mes') arr = meses;
-		arr.forEach(v => { const o=document.createElement('option'); o.value=v; 
-			   o.textContent = state.periodType === 'mes'
-			? new Date(v + "-01").toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-			: v; sel.appendChild(o);}); state.periodValue = arr[0] || '';}
+	function populatePeriodOptions(sel){ 
+  sel.innerHTML=''; 
+  const {safras, anos, meses} = discoverSafrasAndAnos(state.data); 
+  let arr = []; 
+  if(state.periodType==='safra') arr = safras; 
+  else if (state.periodType === 'ano') arr = anos;
+  else if (state.periodType === 'mes') arr = meses;
+
+  arr.forEach(v => { 
+    const o=document.createElement('option'); 
+    o.value=v; 
+    o.textContent = state.periodType === 'mes'
+      ? new Date(v + "-01").toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+      : v; 
+    sel.appendChild(o);
+  });
+
+  if (!arr.includes(state.periodValue)) {
+    state.periodValue = arr[0] || '';
+  }
+
+  sel.value = state.periodValue;
+}
 
     function renderKPIs(){ refs.kpis.innerHTML=''; state.data.forEach(n=>{ const total=calcNodeTotal(n,state.selectedCCs,state); const d=document.createElement('div'); d.className='box'; d.innerHTML=`<h3>${n.natureza}</h3><div>${formatBRL(total)}</div>`; const wrap=document.createElement('div'); wrap.className='box'; wrap.innerHTML = `<h3>${n.natureza}</h3><div>${formatBRL(total)}</div>`; refs.kpis.appendChild(wrap); }); }
 
