@@ -68,7 +68,7 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>Financeiro - Agropecuária Sinuelo</h1>
-          <div style="font-size:12px; color:var(--muted)">v24.08.2025</div>
+          <div style="font-size:12px; color:var(--muted)">v25.08.2025</div>
         </div>
       </div>
       <nav style="margin-top:14px">
@@ -217,6 +217,7 @@
 			  <th>Descrição</th>
               <th>Valor</th>
               <th>Pagamento</th>
+			  <th>Anexo</th>
               <th></th>
             </tr>
           </thead>
@@ -357,7 +358,7 @@
         const centro = state.centros.find(c => c.id === item.centro_id);
         return {
           id: item.id,
-          data: item.data,
+          data: item.data.length === 10 && item.data.includes('-') ? item.data : new Date(item.data).toISOString().slice(0,10),
           natureza: item.natureza_code,
           conta: acc?.nome || '',
           categoria: cat?.nome || '',
@@ -367,7 +368,7 @@
 		  fornecedor_cliente: item.fornecedor_cliente || '',
           ir: !!item.ir,
           valor: Number(item.valor)||0,
-          anexoNome: item.anexo_nome || null
+          anexo_nome: item.anexo_nome || null
         };
       });
     }
@@ -381,7 +382,7 @@
 	fornecedor_cliente: item.fornecedor_cliente ?? '',
 	ir: !!item.ir,
 	valor: item.valor,
-	anexo_nome: item.anexoNome ?? null
+	anexo_nome: item.anexo_nome ?? null
         };
         const res = await fetch(window.API_BASE + `/lancamentos`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
         if(!res.ok){ const errTxt = await res.text(); throw new Error(errTxt || `HTTP ${res.status}`); }
@@ -402,7 +403,7 @@
       fornecedor_cliente: item.fornecedor_cliente ?? '',
       ir: !!item.ir,
       valor: item.valor,
-      anexo_nome: item.anexoNome ?? null
+      anexo_nome: item.anexo_nome ?? null
     };
     const res = await fetch(window.API_BASE + `/lancamentos/${id}`, {
       method:'PUT',
@@ -415,6 +416,18 @@
     console.error('Erro ao atualizar lançamento', err);
     return null;
   }
+}
+ async function uploadAnexo(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${window.API_BASE}/upload`, {
+    method: "POST",
+    body: formData
+  });
+
+  if (!res.ok) throw new Error(await res.text());
+  return res.json(); // { id, name, url }
 }
     // ===== Helpers de selects =====
  function fillNatureza(){
@@ -578,7 +591,7 @@ function buildPayloadFromForm() {
     fornecedor_cliente: elForm.fornecedor_cliente.value || '',
     ir: !!elForm.ir?.checked,
     valor: parseBR(elForm.valor.value),
-    anexoNome: elForm.anexo.files[0]?.name || null
+    anexo_nome: elForm.anexo.files[0]?.name || null
   };
 }
 
@@ -601,7 +614,7 @@ function upsertLancamento(localData, saved) {
     fornecedor_cliente: saved.fornecedor_cliente || '',
     ir: saved.ir,
     valor: Number(saved.valor) || 0,
-    anexoNome: saved.anexo_nome || null
+    anexo_nome: saved.anexo_nome || null
   };
 
   if (state.editingId) {
@@ -618,7 +631,13 @@ function upsertLancamento(localData, saved) {
 // 3) Handler do submit
 document.getElementById('formLanc').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const payload = buildPayloadFromForm();
+  let payload = buildPayloadFromForm();
+
+  // Se tiver anexo, sobe pro Drive
+  if (elForm.anexo.files[0]) {
+    const anexoInfo = await uploadAnexo(elForm.anexo.files[0]);
+    payload.anexo_nome = anexoInfo.url; // guarda o link
+  }
 
   let saved;
   if (state.editingId) {
@@ -637,7 +656,6 @@ document.getElementById('formLanc').addEventListener('submit', async (e) => {
     alert('Erro ao salvar lançamento.');
   }
 });
-
     elForm.valor.addEventListener('input', (e)=>{
       const raw=e.target.value.replace(/[^\d]/g,''); const num=(Number(raw)/100).toFixed(2);
       e.target.value = num.replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -669,12 +687,16 @@ document.getElementById('formLanc').addEventListener('submit', async (e) => {
     function renderTabela(){
       const tbody=document.querySelector('#tabela tbody'); if(!tbody) return;
       tbody.innerHTML=''; let arr=[...state.lanc];
-      if(filtroMes.value) arr=arr.filter(x=> x.data?.startsWith(filtroMes.value));
-      if(filtroNatureza.value) arr=arr.filter(x=> x.natureza===filtroNatureza.value);
+      if (filtroMes.value) {const ym = filtroMes.value.padStart(7, "0"); arr = arr.filter(x => x.data?.startsWith(ym));}
+	  if(filtroNatureza.value) {arr=arr.filter(x=> x.natureza===filtroNatureza.value);}
       const q=buscaTxt.value?.toLowerCase?.()||'';
-      if(q) arr=arr.filter(x=> (x.categoria+x.descricao+x.conta+x.centro+x.pagamento+x.fornecedor_cliente).toLowerCase().includes(q));
+      if(q) {arr=arr.filter(x=> (x.categoria+x.descricao+x.conta+x.centro+x.pagamento+x.fornecedor_cliente).toLowerCase().includes(q));}
       arr.forEach(x=>{
         const tr=document.createElement('tr');
+		const anexoHtml = x.anexo_nome
+  ? `<a href="${x.anexo_nome}" target="_blank" title="Ver anexo">📎</a>` 
+  : '';
+  
 	tr.innerHTML = `
 	<td>${fmtDate(x.data)}</td>
 	<td>${x.natureza}</td>
@@ -685,15 +707,16 @@ document.getElementById('formLanc').addEventListener('submit', async (e) => {
 	<td>${x.descricao||'-'}</td>
 	<td style="font-weight:700">${BRL.format(x.valor)}</td>
 	<td>${x.pagamento||'-'}</td>
+	<td>${anexoHtml}</td>
 	<td style="text-align:right">
-    <button class="secondary" onclick="editar('${x.id}')">Editar</button>
-    <button class="danger" onclick="excluir('${x.id}')">Excluir</button>
+    <button class="secondary" onclick="editar(${x.id})">Editar</button>
+    <button class="danger" onclick="excluir(${x.id})">Excluir</button>
 	</td>`;
         tbody.appendChild(tr);
       });
     }
 	window.editar = async (id)=>{
-	  const x=state.lanc.find(i=>i.id===id); 
+	  const x = state.lanc.find(i => String(i.id) === String(id));
 	  if(!x) return;
 
 	  state.editingId = id;  // guardamos qual lançamento está sendo editado
@@ -720,7 +743,7 @@ document.getElementById('formLanc').addEventListener('submit', async (e) => {
     window.excluir = async (id)=>{
       if(!confirm('Excluir este lançamento?')) return;
       await removeLancamento(id);
-      state.lanc=state.lanc.filter(i=>i.id!==id);
+      state.lanc = state.lanc.filter(i => String(i.id) !== String(id));
       updateKPIs(); renderTabela(); updateTreeWidget();
     }
 

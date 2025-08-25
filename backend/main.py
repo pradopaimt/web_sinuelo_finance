@@ -18,17 +18,34 @@ that you begin with the same taxonomy that was defined in the prototype.
 
 from typing import List, Optional, Dict, Any
 from fastapi import FastAPI, APIRouter, HTTPException, Query, Path
+from fastapi import UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 import sqlite3
 import os
 import pathlib
+from fastapi import UploadFile, File, Form
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+import json
 
 DB_DIR = os.environ.get("SINUELO_DB_DIR", "/data")
 os.makedirs(DB_DIR, exist_ok=True)
 DB_NAME = os.environ.get("SINUELO_DB_NAME", "sinuelo.db")
 DB_PATH = os.path.join(DB_DIR, DB_NAME)
+
+creds_info = json.loads(os.environ["GOOGLE_SERVICE_KEY"])
+creds = service_account.Credentials.from_service_account_info(
+    creds_info,
+    scopes=["https://www.googleapis.com/auth/drive.file"]
+)
+
+# ID da pasta (vem do secret)
+DRIVE_FOLDER_ID = os.environ.get("GOOGLE_DRIVE_FOLDER")
+
+# Inicializa cliente do Drive
+drive_service = build("drive", "v3", credentials=creds)
 
 # Router for API endpoints, prefixing all routes with /api
 api = APIRouter(prefix="/api")
@@ -556,6 +573,68 @@ def create_lancamento(item: LancamentoIn) -> LancamentoOut:
         anexo_nome=row["anexo_nome"],
     )
 
+@api.put("/lancamentos/{lanc_id}", response_model=LancamentoOut)
+def update_lancamento(
+    lanc_id: int,
+    item: LancamentoIn
+) -> LancamentoOut:
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # Verifica se existe
+    cur.execute("SELECT * FROM lancamento WHERE id=?", (lanc_id,))
+    if not cur.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+
+    # Atualiza
+    try:
+        cur.execute(
+            """
+            UPDATE lancamento
+            SET data=?, natureza_code=?, conta_id=?, categoria_id=?, centro_id=?,
+                pagamento=?, descricao=?, fornecedor_cliente=?, ir=?, valor=?, anexo_nome=?
+            WHERE id=?
+            """,
+            (
+                item.data,
+                item.natureza_code,
+                item.conta_id,
+                item.categoria_id,
+                item.centro_id,
+                item.pagamento,
+                item.descricao,
+                item.fornecedor_cliente,
+                1 if item.ir else 0,
+                item.valor,
+                item.anexo_nome,
+                lanc_id,
+            ),
+        )
+        conn.commit()
+    except sqlite3.IntegrityError as e:
+        conn.close()
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Retorna o registro atualizado
+    cur.execute("SELECT * FROM lancamento WHERE id=?", (lanc_id,))
+    row = cur.fetchone()
+    conn.close()
+    return LancamentoOut(
+        id=row["id"],
+        data=row["data"],
+        natureza_code=row["natureza_code"],
+        conta_id=row["conta_id"],
+        categoria_id=row["categoria_id"],
+        centro_id=row["centro_id"],
+        pagamento=row["pagamento"],
+        descricao=row["descricao"],
+        fornecedor_cliente=row["fornecedor_cliente"],
+        ir=bool(row["ir"]),
+        valor=row["valor"],
+        anexo_nome=row["anexo_nome"],
+    )
+
 @api.get("/lancamentos", response_model=List[LancamentoOut])
 def list_lancamentos(
     start_date: Optional[str] = Query(None, description="Start date ISO YYYY-MM-DD inclusive"),
@@ -600,6 +679,43 @@ def list_lancamentos(
         )
         for row in rows
     ]
+from googleapiclient.http import MediaIoBaseUpload
+import io
+
+@api.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    
+    try:
+        # Lê conteúdo do arquivo enviado
+        file_content = await file.read()
+
+        # Prepara metadados e stream
+        file_metadata = {
+            "name": file.filename,
+            "parents": [DRIVE_FOLDER_ID] if DRIVE_FOLDER_ID else []
+        }
+        media = MediaIoBaseUpload(io.BytesIO(file_content), mimetype=file.content_type)
+
+        created = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields="id, name, webViewLink"
+        ).execute()
+
+        # Opcional: deixa o arquivo acessível a quem tiver o link
+        drive_service.permissions().create(
+            fileId=created["id"],
+            body={"type": "anyone", "role": "reader"}
+        ).execute()
+
+        return {
+            "id": created["id"],
+            "name": created["name"],
+            "url": created["webViewLink"]
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro no upload: {e}")
 
 @api.delete("/lancamentos/{lanc_id}", status_code=204)
 def delete_lancamento(lanc_id: int = Path(..., description="Lancamento ID")) -> None:
