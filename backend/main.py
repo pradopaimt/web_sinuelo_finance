@@ -35,17 +35,27 @@ os.makedirs(DB_DIR, exist_ok=True)
 DB_NAME = os.environ.get("SINUELO_DB_NAME", "sinuelo.db")
 DB_PATH = os.path.join(DB_DIR, DB_NAME)
 
-creds_info = json.loads(os.environ["GOOGLE_SERVICE_KEY"])
-creds = service_account.Credentials.from_service_account_info(
-    creds_info,
-    scopes=["https://www.googleapis.com/auth/drive.file"]
-)
+from googleapiclient.http import MediaIoBaseUpload
+import io, json
 
+drive_service = None  # inicia vazio
+
+def get_drive_service():
+    global drive_service
+    if drive_service is None:
+        try:
+            creds_info = json.loads(os.environ["GOOGLE_SERVICE_KEY"])
+            creds = service_account.Credentials.from_service_account_info(
+                creds_info,
+                scopes=["https://www.googleapis.com/auth/drive.file"]
+            )
+            drive_service = build("drive", "v3", credentials=creds)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Erro ao inicializar Google Drive: {e}")
+    return drive_service
+    
 # ID da pasta (vem do secret)
 DRIVE_FOLDER_ID = os.environ.get("GOOGLE_DRIVE_FOLDER")
-
-# Inicializa cliente do Drive
-drive_service = build("drive", "v3", credentials=creds)
 
 # Router for API endpoints, prefixing all routes with /api
 api = APIRouter(prefix="/api")
@@ -684,26 +694,23 @@ import io
 
 @api.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    
     try:
-        # Lê conteúdo do arquivo enviado
-        file_content = await file.read()
+        drive = get_drive_service()
 
-        # Prepara metadados e stream
+        file_content = await file.read()
         file_metadata = {
             "name": file.filename,
-            "parents": [DRIVE_FOLDER_ID] if DRIVE_FOLDER_ID else []
+            "parents": [os.environ.get("GOOGLE_DRIVE_FOLDER")] if os.environ.get("GOOGLE_DRIVE_FOLDER") else []
         }
         media = MediaIoBaseUpload(io.BytesIO(file_content), mimetype=file.content_type)
 
-        created = drive_service.files().create(
+        created = drive.files().create(
             body=file_metadata,
             media_body=media,
             fields="id, name, webViewLink"
         ).execute()
 
-        # Opcional: deixa o arquivo acessível a quem tiver o link
-        drive_service.permissions().create(
+        drive.permissions().create(
             fileId=created["id"],
             body={"type": "anyone", "role": "reader"}
         ).execute()
