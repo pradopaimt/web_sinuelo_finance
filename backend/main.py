@@ -1,24 +1,28 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from . import models, schemas
-from .database import engine, SessionLocal
-from .seed import seed_taxonomy
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-import pathlib
-from fastapi import UploadFile, File, APIRouter
-import io
-import os, json
+from sqlalchemy.orm import Session
+import pathlib, os, json, io, base64
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 
+from . import models, schemas
+from .database import SessionLocal
+from .seed import seed_taxonomy
+
 app = FastAPI(title="Sinuelo Finance API")
 
-static_dir = pathlib.Path(__file__).resolve().parent.parent / "static"
-app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+# monta estáticos em /static
 
+static_dir = pathlib.Path(__file__).resolve().parent.parent / "static"
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+        
+@app.get("/", response_class=HTMLResponse)
+async def index():
+    return FileResponse(static_dir / "index.html")
+    
 # ---- Configuração do Google Drive ----
-import base64
 
 raw_secret = os.getenv("GOOGLE_SERVICE_KEY")
 if not raw_secret:
@@ -39,7 +43,7 @@ def get_db():
         yield db
     finally:
         db.close()
-
+    
 @app.on_event("startup")
 def startup_event():
     # insere naturezas/contas/categorias se não existir
