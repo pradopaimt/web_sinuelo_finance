@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f172a" />
   <link rel="manifest" href="/static/manifest.webmanifest" />
   <link rel="icon" href="/static/icons/favicon.ico" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
   <title>Financeiro - Agropecuária Sinuelo</title>
 
 <script>
@@ -326,7 +326,7 @@
         const contObjs = [];
         for(const acc of contas){
           let cats=[]; try{ cats = await fetchJSON(`${API_BASE}/contas/${acc.id}/categorias`);}catch(_){ cats=[]; }
-          contObjs.push({ id:acc.id, nome:acc.nome, cats: cats.map(c=>c.nome), cats_full: cats.map(c=>({id:c.id, nome:c.nome})) });
+         contObjs.push({id: acc.id, nome: acc.nome, categorias: cats.map(c => ({id: c.id, nome: c.nome}))});
         }
         state.tax.push({ code:nat.code, nome:nat.nome, contas: contObjs });
       }
@@ -354,7 +354,7 @@
       state.lanc = list.map(item => {
         const nat = state.tax.find(n => n.code === item.natureza_code);
         const acc = nat?.contas.find(c => c.id === item.conta_id);
-        const cat = acc?.cats_full.find(c => c.id === item.categoria_id);
+        const cat = acc?.categorias.find(c => c.id === item.categoria_id);
         const centro = state.centros.find(c => c.id === item.centro_id);
         return {
           id: item.id,
@@ -456,19 +456,20 @@
     });
     fillCategorias();
   }
-  function fillCategorias(){
-    const elConta = document.getElementById('conta');
-    const elCat = document.getElementById('categoria');
-    if (!elCat) return;
-    elCat.innerHTML='';
-    const nat=getNat();
-    const conta = nat?.contas.find(c=> c.nome===elConta?.value);
-    conta?.cats.forEach(cn=>{
-      const o=document.createElement('option');
-      o.value=cn; o.textContent=cn;
-      elCat.appendChild(o);
-    });
-  }
+function fillCategorias(){
+  const elConta = document.getElementById('conta');
+  const elCat = document.getElementById('categoria');
+  if (!elCat) return;
+  elCat.innerHTML='';
+  const nat=getNat();
+  const conta = nat?.contas.find(c => c.id === parseInt(elConta.value));
+  conta?.categorias.forEach(cat => {
+    const o = document.createElement('option');
+    o.value = cat.id;
+    o.textContent = cat.nome;
+    elCat.appendChild(o);
+  });
+}
   function fillCentros(){
     const elCentro = document.getElementById('centro');
     if (!elCentro) return;
@@ -576,8 +577,8 @@ function buildPayloadFromForm() {
   const centreName = centroEl?.value || 'Geral';
 
   const nat    = state.tax.find(n => n.code === natCode);
-  const acc    = nat?.contas.find(c => c.nome === accName);
-  const cat    = acc?.cats_full.find(cat => cat.nome === catName);
+  const acc = nat?.contas.find(c => String(c.id) === accName);
+  const cat = acc?.categorias.find(cat => String(cat.id) === catName);
   const centre = state.centros.find(c => c.nome === centreName);
 
   return {
@@ -599,7 +600,7 @@ function buildPayloadFromForm() {
 function upsertLancamento(localData, saved) {
   const nat    = state.tax.find(n => n.code === saved.natureza_code);
   const acc    = nat?.contas.find(c => c.id === saved.conta_id);
-  const cat    = acc?.cats_full.find(c => c.id === saved.categoria_id);
+  const cat    = acc?.categorias.find(c => c.id === saved.categoria_id);
   const centre = state.centros.find(c => c.id === saved.centro_id);
 
   const item = {
@@ -729,8 +730,8 @@ document.getElementById('formLanc').addEventListener('submit', async (e) => {
 
 	  elForm.data.value = x.data;
 	  if (natEl){ natEl.value = x.natureza; fillContas(); }
-	  if (contaEl){ contaEl.value = x.conta; fillCategorias(); }
-	  if (catEl){ catEl.value = x.categoria; }
+		if (contaEl){ contaEl.value = x.conta_id; fillCategorias(); }
+		if (catEl){ catEl.value = x.categoria_id; }
 	  elForm.valor.value = BRL.format(x.valor).replace('R$\xa0','').trim();
 	  fillCentros();
 	  if (centroEl){ centroEl.value = x.centro; }
@@ -759,7 +760,7 @@ document.getElementById('formLanc').addEventListener('submit', async (e) => {
           header.innerHTML = `<span style="font-weight:700">${c.nome}</span> <button class='secondary' onclick="uiRenameConta('${n.code}', '${c.nome.replace(/'/g,"&#39;")}')">Renomear</button> <button class='danger' onclick="uiDeleteConta('${n.code}', '${c.nome.replace(/'/g,"&#39;")}')">Excluir</button>`;
           b.appendChild(header);
           const ul=document.createElement('ul'); ul.style.margin='6px 0 0 16px'; ul.style.padding='0';
-          c.cats.forEach(k=>{ const li=document.createElement('li'); li.textContent=k; li.style.margin='2px 0'; ul.appendChild(li); });
+          c.categorias.forEach(k=>{ const li=document.createElement('li'); li.textContent=k.nome; li.style.margin='2px 0'; ul.appendChild(li); });
           b.appendChild(ul); col.appendChild(b);
         });
         root.appendChild(col);
@@ -773,14 +774,16 @@ document.getElementById('formLanc').addEventListener('submit', async (e) => {
     document.getElementById('pcAddCat').addEventListener('click', ()=>{
       const nat=state.tax.find(x=> x.code===pcNat.value); const conta=nat?.contas.find(c=> c.nome===pcConta.value);
       const name=(document.getElementById('pcNovaCat').value||'').trim(); if(!name) return alert('Informe o nome da categoria');
-      if(conta.cats.includes(name)) return alert('Categoria já existe nesta conta.'); conta.cats.push(name);
+      if(conta.categorias.some(c => c.nome.toLowerCase() === name.toLowerCase()))
+	return alert('Categoria já existe nesta conta.');
+	conta.categorias.push({id: crypto.randomUUID(), nome: name});
       document.getElementById('pcNovaCat').value=''; renderPlanoContas(); fillContas();
     });
     document.getElementById('pcAddConta').addEventListener('click', ()=>{
       const n=state.tax.find(x=> x.code===pcNat.value); const name=(document.getElementById('pcNovaConta').value||'').trim();
       if(!name) return alert('Informe o nome da conta');
       if(n.contas.some(c=> c.nome.toLowerCase()===name.toLowerCase())) return alert('Essa conta já existe nesta Natureza.');
-      n.contas.push({nome:name, cats:[]}); document.getElementById('pcNovaConta').value='';
+      n.contas.push({ id: crypto.randomUUID(), nome: name, categorias: [] }); document.getElementById('pcNovaConta').value='';
       renderPlanoContas(); fillContas(); fillPcContas();
     });
     document.getElementById('pcBtnRenomear').addEventListener('click', ()=>{
@@ -807,7 +810,11 @@ document.getElementById('formLanc').addEventListener('submit', async (e) => {
       }
       if(!confirm(`Excluir a conta "${name}" da Natureza ${n.nome}?`)) return;
       if(destino){ state.lanc.forEach(l=>{ if(l.natureza===natCode && l.conta===name){ l.conta = destino; } }); }
-      if(destino){ const contaDst = n.contas.find(c=> c.nome===destino); const contaSrc = n.contas.find(c=> c.nome===name); contaSrc.cats.forEach(cat=>{ if(!contaDst.cats.includes(cat)) contaDst.cats.push(cat); }); }
+      if(destino){ const contaDst = n.contas.find(c=> c.nome===destino); const contaSrc = n.contas.find(c=> c.nome===name); contaSrc.categorias.forEach(cat=>{
+  if(!contaDst.categorias.some(c => c.nome === cat.nome)) {
+    contaDst.categorias.push(cat);
+  }
+});
       n.contas = n.contas.filter(c=> c.nome!==name); renderPlanoContas(); fillContas(); fillPcContas(); alert('Conta excluída com sucesso.');
     }
 
