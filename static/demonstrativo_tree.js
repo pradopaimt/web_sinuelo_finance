@@ -160,9 +160,14 @@ function passesFilters(node, st) {
   arr.forEach(v => { 
     const o=document.createElement('option'); 
     o.value=v; 
-    o.textContent = state.periodType === 'mes'
-      ? new Date(v + "-01").toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-      : v; 
+	if (state.periodType === 'mes') {
+      // v é "YYYY-MM"; divida em ano e mês e crie Date local
+      const [y, m] = v.split('-');
+      const date = new Date(Number(y), Number(m) - 1, 1);
+      o.textContent = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    } else {
+      o.textContent = v;
+    }
     sel.appendChild(o);
   });
 
