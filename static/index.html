@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0f172a" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icons/favicon.ico" />
+  <link rel="manifest" href="/static/manifest.webmanifest" />
+  <link rel="icon" href="/static/icons/favicon.ico" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>Financeiro - Agropecuária Sinuelo</title>
 
@@ -299,7 +299,7 @@
 	<script>  const API_BASE = window.API_BASE; </script>
   <script>
     // ===== PWA =====
-    if('serviceWorker' in navigator){ window.addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js').catch(console.warn)); }
+    if('serviceWorker' in navigator){ window.addEventListener('load', ()=> navigator.serviceWorker.register('/static/sw.js').catch(console.warn)); }
     let deferredPrompt; const btnInstall=document.getElementById('btnInstall'); const installHint=document.getElementById('installHint');
     window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt=e; btnInstall.style.display='inline-flex'; installHint.style.display='none'; });
     btnInstall?.addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; btnInstall.style.display='none'; });
