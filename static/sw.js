@@ -2,14 +2,14 @@
 const CACHE_NAME = "sinuelo-cache-v14"; // bump a versão para forçar update
 
 const ASSETS = [
-  "./",
-  "./index.html",
-  "./manifest.webmanifest",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/maskable-512.png",
-  "./icons/favicon.ico",
-  "./demonstrativo_tree.js",
+  "/static/",
+  "/static/index.html",
+  "/static/manifest.webmanifest",
+  "/static/icons/icon-192.png",
+  "/static/icons/icon-512.png",
+  "/static/icons/maskable-512.png",
+  "/static/icons/favicon.ico",
+  "/static/demonstrativo_tree.js",
 ];
 
 self.addEventListener("install", (event) => {
