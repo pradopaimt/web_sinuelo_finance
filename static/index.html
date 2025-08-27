@@ -68,7 +68,7 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>Financeiro - Agropecuária Sinuelo</h1>
-          <div style="font-size:12px; color:var(--muted)">v25.08.2025</div>
+          <div style="font-size:12px; color:var(--muted)">v25.08.2025neon</div>
         </div>
       </div>
       <nav style="margin-top:14px">
@@ -451,7 +451,7 @@
     const nat=getNat();
     nat?.contas.forEach(c=>{
       const o=document.createElement('option');
-      o.value=c.nome; o.textContent=c.nome;
+      o.value=c.id; o.textContent=c.nome;
       elConta.appendChild(o);
     });
     fillCategorias();
