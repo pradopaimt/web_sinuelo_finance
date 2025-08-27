@@ -14,7 +14,7 @@ from googleapiclient.http import MediaIoBaseUpload
 
 app = FastAPI(title="Sinuelo Finance API")
 
-static_dir = pathlib.Path(__file__).resolve().parent / "static"
+static_dir = pathlib.Path(__file__).resolve().parent.parent / "static"
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 if not os.getenv("GOOGLE_SERVICE_KEY"):
