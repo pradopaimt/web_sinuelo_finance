@@ -17,11 +17,16 @@ app = FastAPI(title="Sinuelo Finance API")
 static_dir = pathlib.Path(__file__).resolve().parent.parent / "static"
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
-if not os.getenv("GOOGLE_SERVICE_KEY"):
-    raise RuntimeError("GOOGLE_SERVICE_KEY não configurado")
-    
 # ---- Configuração do Google Drive ----
-creds_dict = json.loads(os.getenv("GOOGLE_SERVICE_KEY"))
+import base64
+
+raw_secret = os.getenv("GOOGLE_SERVICE_KEY")
+if not raw_secret:
+    raise RuntimeError("GOOGLE_SERVICE_KEY não configurado")
+
+decoded = base64.b64decode(raw_secret).decode("utf-8")
+creds_dict = json.loads(decoded)
+
 creds = service_account.Credentials.from_service_account_info(creds_dict)
 drive_service = build("drive", "v3", credentials=creds)
 
