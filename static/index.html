@@ -360,6 +360,8 @@
           id: item.id,
           data: item.data.length === 10 && item.data.includes('-') ? item.data : new Date(item.data).toISOString().slice(0,10),
           natureza: item.natureza_code,
+		  conta_id: item.conta_id ?? null,          
+		  categoria_id: item.categoria_id ?? null,  
           conta: acc?.nome || '',
           categoria: cat?.nome || '',
           centro: centro?.nome || '',
@@ -607,6 +609,8 @@ function upsertLancamento(localData, saved) {
     id: saved.id,
     data: saved.data,
     natureza: saved.natureza_code,
+	conta_id: saved.conta_id ?? null,          
+    categoria_id: saved.categoria_id ?? null,   
     conta: acc?.nome || '',
     categoria: cat?.nome || '',
     centro: centre?.nome || '',
@@ -685,11 +689,15 @@ document.getElementById('formLanc').addEventListener('submit', async (e) => {
     const filtroNatureza=document.getElementById('filtroNatureza');
     const buscaTxt=document.getElementById('buscaTxt');
     [filtroMes,filtroNatureza,buscaTxt].forEach(x=> x.addEventListener('input', renderTabela));
-    function renderTabela(){
-      const tbody=document.querySelector('#tabela tbody'); if(!tbody) return;
-      tbody.innerHTML=''; let arr=[...state.lanc];
-      if (filtroMes.value) {const ym = filtroMes.value.padStart(7, "0"); arr = arr.filter(x => x.data?.startsWith(ym));}
-	  if(filtroNatureza.value) {arr=arr.filter(x=> x.natureza===filtroNatureza.value);}
+
+function renderTabela(){
+  const tbody=document.querySelector('#tabela tbody'); if(!tbody) return;
+  tbody.innerHTML=''; let arr=[...state.lanc];
+  if (filtroMes.value) {
+    const ym = String(filtroMes.value).slice(0,7);
+    arr = arr.filter(x => String(x.data).slice(0,7) === ym);
+  }
+  if(filtroNatureza.value) {arr=arr.filter(x=> x.natureza===filtroNatureza.value);}
       const q=buscaTxt.value?.toLowerCase?.()||'';
       if(q) {arr=arr.filter(x=> (x.categoria+x.descricao+x.conta+x.centro+x.pagamento+x.fornecedor_cliente).toLowerCase().includes(q));}
       arr.forEach(x=>{

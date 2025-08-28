@@ -1,12 +1,3 @@
-/*
- * Patch — Demonstrativo Tree (Drop‑in)
- * Como usar no seu index.html já funcionando:
- * 1) Adicione <div id="demonstrativo-tree"></div> onde quer renderizar o componente.
- * 2) Coloque este <script> (este arquivo) após o HTML, antes de </body>.
- * 3) Chame: DemonstrativoTreeWidget.mount('#demonstrativo-tree', { loadData })
- *    Onde loadData() retorna uma Promise com o array de naturezas no formato já combinado.
- *    Se não passar loadData, ele usa mockData.
- */
 (function(){
   const CSS = `:root{--bg:#0f172a;--panel:#111827;--muted:#94a3b8;--text:#e5e7eb;--accent:#22c55e;--border:#1f2937;--hover:#0b1222;--info:#93c5fd}*{box-sizing:border-box} .sf-card{background:rgba(17,24,39,.75);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);backdrop-filter:blur(6px)} .sf-header{padding:16px 20px;display:flex;gap:12px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)} .sf-title{font-size:18px;margin:0;font-weight:600;color:var(--text)} .sf-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end} .sf-group{display:flex;align-items:center;gap:8px;background:#0b1222;border:1px solid var(--border);padding:8px 10px;border-radius:12px} .sf-group .title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em} .sf-pill{display:inline-flex;align-items:center;gap:8px;background:#0b1222;border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:999px;cursor:pointer;user-select:none} .sf-pill input{accent-color:var(--accent)} .sf-btn{background:#0b1222;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer} .sf-btn:hover{background:#0d162b} .sf-select{background:#0b1222;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:6px 8px} .sf-content{padding:8px 8px 12px} table.sf{width:100%;border-collapse:collapse;font-size:14px} table.sf thead th{text-align:left;font-weight:600;color:var(--muted);padding:10px 8px;border-bottom:1px solid var(--border)} table.sf tbody td{padding:8px;border-bottom:1px dashed #162033} .sf-name{display:flex;align-items:center;gap:8px} .sf-toggle{width:22px;height:22px;border-radius:6px;border:1px solid var(--border);display:inline-grid;place-items:center;cursor:pointer;background:#0b1222;color:var(--muted);font-weight:700;user-select:none} .sf-toggle:hover{background:#0d162b} .indent-0{padding-left:0}.indent-1{padding-left:20px}.indent-2{padding-left:40px}.indent-3{padding-left:60px} .sf-badge{display:inline-block;background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.4);padding:2px 8px;border-radius:999px;font-size:12px} .sf-note{color:var(--muted);font-size:12px;padding:10px 12px} .sf-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px;border-bottom:1px solid var(--border)} .sf-kpi .box{background:#0b1222;border:1px solid var(--border);border-radius:12px;padding:12px} .sf-kpi .box h3{margin:0 0 6px;font-size:12px;color:var(--muted);font-weight:600} .sf-kpi .box div{font-size:16px;font-weight:700} tfoot td{font-weight:700;border-top:1px solid var(--border);padding-top:10px} @media (max-width:720px){.sf-kpi{grid-template-columns:1fr 1fr}.sf-header{align-items:start;flex-direction:column;gap:12px}.sf-controls{justify-content:flex-start}.sf-group{width:100%;flex-wrap:wrap}}`;
 
@@ -23,19 +14,41 @@
 function passesFilters(node, st) {
   if (st.filterIR && node.ccValues && !(node.flags && node.flags.impostoRenda)) return false;
   if (node.ccValues && st.periodType && st.periodValue) {
-    if (st.periodType === 'safra' && node.periodo.safra !== st.periodValue) return false;
-    if (st.periodType === 'ano' && String(node.periodo.ano) !== String(st.periodValue)) return false;
-    if (st.periodType === 'mes' && node.periodo.mes !== st.periodValue) return false;
+    const p = node.periodo || {};
+    if (st.periodType === 'safra' && String(p.safra) !== String(st.periodValue)) return false;
+    if (st.periodType === 'ano'   && String(p.ano)   !== String(st.periodValue)) return false;
+    if (st.periodType === 'mes'   && String(p.mes)   !== String(st.periodValue)) return false;
   }
   return true;
 }
   
   function calcNodeTotal(node, selectedCCs, st){ if(!passesFilters(node,st)) return 0; if(node.ccValues){ return Object.entries(node.ccValues).filter(([cc])=>selectedCCs.has(cc)).reduce((s,[,v])=>s+(Number(v)||0),0);} if(node.items){ return node.items.reduce((s,ch)=>s+calcNodeTotal(ch,selectedCCs,st),0);} return 0; }
   function discoverSafrasAndAnos(data){ 
-	const safras=new Set(), anos=new Set(), meses = new Set(); 
-	const walk=n=>{ if(n.periodo){ if(n.periodo.safra) safras.add(n.periodo.safra); if(n.periodo.ano) anos.add(String(n.periodo.ano)); if(n.periodo.mes) meses.add(n.periodo.mes); } if(n.items) n.items.forEach(walk); }; 
-		data.forEach(walk); return {safras:[...safras].sort(), anos:[...anos].sort(), meses: [...meses].sort()}; }
+  const safras=new Set(), anos=new Set(), meses=new Set();
+  const walk=n=>{
+    if(n.periodo){
+      if(n.periodo.safra!=null) safras.add(String(n.periodo.safra));
+      if(n.periodo.ano  !=null) anos.add(String(n.periodo.ano));
+      if(n.periodo.mes  !=null) meses.add(String(n.periodo.mes)); // normaliza para string
+    }
+    if(n.items) n.items.forEach(walk);
+  };
+  data.forEach(walk);
 
+  const sortSmart = arr => arr.slice().sort((a,b)=>{
+    const re=/^\d{4}-\d{1,2}$/;               // ex.: "2025-09"
+    if(re.test(a) && re.test(b)) return new Date(a+'-01') - new Date(b+'-01');
+    const na=Number(a), nb=Number(b);         // ex.: "9" vs "10"
+    if(!Number.isNaN(na) && !Number.isNaN(nb)) return na-nb;
+    return String(a).localeCompare(String(b)); // fallback
+  });
+
+  return {
+    safras: sortSmart([...safras]),
+    anos:   sortSmart([...anos]),
+    meses:  sortSmart([...meses]),
+  };
+}
   function ensureStyle(){ if(document.getElementById('sf-tree-style')) return; const s=document.createElement('style'); s.id='sf-tree-style'; s.textContent=CSS; document.head.appendChild(s); }
 
   function mount(root, opts={}){
@@ -98,7 +111,7 @@ function passesFilters(node, st) {
 	state.periodValue =
 	state.periodType === 'safra' ? (safras[0] || '') :
 	state.periodType === 'ano'   ? (anos[0]   || '') :
-	state.periodType === 'mes'   ? (meses[0]  || '') :
+	state.periodType === 'mes'   ? (String(meses[0]) || '') :
   '';
  state.expanded.clear();
       renderAll();
@@ -150,31 +163,49 @@ function passesFilters(node, st) {
     }
 
 	function populatePeriodOptions(sel){ 
-  sel.innerHTML=''; 
-  const {safras, anos, meses} = discoverSafrasAndAnos(state.data); 
-  let arr = []; 
-  if(state.periodType==='safra') arr = safras; 
-  else if (state.periodType === 'ano') arr = anos;
-  else if (state.periodType === 'mes') arr = meses;
+  sel.innerHTML='';
+  const {safras, anos, meses} = discoverSafrasAndAnos(state.data);
+  let arr=[];
+  if(state.periodType==='safra') arr = safras;
+  else if(state.periodType==='ano') arr = anos;
+  else if(state.periodType==='mes') arr = meses;
 
-  arr.forEach(v => { 
-    const o=document.createElement('option'); 
-    o.value=v; 
-    o.textContent = state.periodType === 'mes'
-      ? new Date(v + "-01").toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-      : v; 
+  const fmtLabel = (v)=>{
+    const s=String(v);
+    if(state.periodType==='mes'){
+      if(/^\d{4}-\d{1,2}$/.test(s)) {
+        return new Date(s+'-01').toLocaleDateString('pt-BR',{month:'long', year:'numeric'});
+      }
+      const n=Number(s);
+      if(!Number.isNaN(n) && n>=1 && n<=12) {
+        return new Date(2000,n-1,1).toLocaleDateString('pt-BR',{month:'long'});
+      }
+    }
+    return s;
+  };
+    arr.forEach(v=>{
+    const o=document.createElement('option');
+    o.value = String(v);          // <-- sempre string
+    o.textContent = fmtLabel(v);
     sel.appendChild(o);
   });
 
-  if (!arr.includes(state.periodValue)) {
-    state.periodValue = arr[0] || '';
+ if (!arr.map(String).includes(String(state.periodValue))) {
+    state.periodValue = arr.length ? String(arr[0]) : '';
   }
-
-  sel.value = state.periodValue;
+  sel.value = String(state.periodValue);
 }
 
-    function renderKPIs(){ refs.kpis.innerHTML=''; state.data.forEach(n=>{ const total=calcNodeTotal(n,state.selectedCCs,state); const d=document.createElement('div'); d.className='box'; d.innerHTML=`<h3>${n.natureza}</h3><div>${formatBRL(total)}</div>`; const wrap=document.createElement('div'); wrap.className='box'; wrap.innerHTML = `<h3>${n.natureza}</h3><div>${formatBRL(total)}</div>`; refs.kpis.appendChild(wrap); }); }
-
+function renderKPIs(){
+  refs.kpis.innerHTML='';
+  state.data.forEach(n=>{
+    const total = calcNodeTotal(n, state.selectedCCs, state);
+    const box = document.createElement('div');
+    box.className = 'box';
+    box.innerHTML = `<h3>${n.natureza}</h3><div>${formatBRL(total)}</div>`;
+    refs.kpis.appendChild(box);
+  });
+}
     function collectAllRowIds(){ const ids=new Set(); state.data.forEach(n=>{ const nid=`nat-${slugify(n.natureza)}`; ids.add(nid); (n.items||[]).forEach(c=>{ const cid=`${nid}::cat-${slugify(c.categoria)}`; ids.add(cid); (c.items||[]).forEach(cta=>{ ids.add(`${cid}::cta-${slugify(cta.conta)}`); }); }); }); return ids; }
 
 function row({ id, level, name, total, percent, expandable, isOpen }){
