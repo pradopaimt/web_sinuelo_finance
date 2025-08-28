@@ -68,7 +68,7 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>Financeiro - Agropecuária Sinuelo</h1>
-          <div style="font-size:12px; color:var(--muted)">v27.08.2025</div>
+          <div style="font-size:12px; color:var(--muted)">v28.08.2025</div>
         </div>
       </div>
       <nav style="margin-top:14px">
@@ -866,7 +866,6 @@ function safraLabel(iso){
 }
 
 function buildTreeDataForWidget(){
-  // Acumula: natureza -> conta -> categoria
   const tree = {};
   for (const x of state.lanc){
     const natureza = NAT_LABEL[x.natureza] || x.natureza || '(sem natureza)';
@@ -874,36 +873,50 @@ function buildTreeDataForWidget(){
     const categoria = x.categoria || '(sem categoria)';
     const centro    = x.centro    || 'Geral';
     const valor     = Number(x.valor)||0;
-    const ano       = new Date(x.data + 'T00:00:00').getFullYear();
-    const safra     = safraLabel(x.data);
-	const mes = x.data.slice(0,7); 
-    
-	tree[natureza] ??= {};
+
+    const d   = new Date(x.data + 'T00:00:00');
+    const ano = String(d.getFullYear());
+    const safra = safraLabel(x.data);
+    const mes = x.data.slice(0,7); // YYYY-MM
+
+    tree[natureza] ??= {};
     tree[natureza][conta] ??= {};
-    tree[natureza][conta][categoria] ??= { cc:{}, ir:false, ano, safra, mes };
-    tree[natureza][conta][categoria].cc[centro] = (tree[natureza][conta][categoria].cc[centro]||0) + valor;
-    if (x.ir) tree[natureza][conta][categoria].ir = true;
+
+    let meta = tree[natureza][conta][categoria];
+    if (!meta) {
+      meta = { cc:{}, ir:false, periodo: { ano:new Set(), safra:new Set(), mes:new Set() } };
+      tree[natureza][conta][categoria] = meta;
+    }
+
+    meta.cc[centro] = (meta.cc[centro] || 0) + valor;
+    if (x.ir) meta.ir = true;
+
+    // acumula períodos (vários meses/anos/safras)
+    meta.periodo.ano.add(ano);
+    meta.periodo.safra.add(String(safra));
+    meta.periodo.mes.add(String(mes));
   }
 
-  // Converte para o formato esperado pelo widget
   return Object.entries(tree).map(([natureza, contasObj]) => ({
     natureza,
-    // nível 1: o widget espera "categoria" -> aqui colocamos o NOME DA CONTA
     items: Object.entries(contasObj).map(([contaNome, categoriasObj]) => ({
       categoria: contaNome,
-      // nível 2: folhas (cada item é uma "categoria")
       items: Object.entries(categoriasObj).map(([catNome, meta]) => ({
-        conta: catNome,                     // folha mostra a CATEGORIA
+        conta: catNome,
         ccValues: meta.cc,
         flags: { impostoRenda: !!meta.ir },
-        periodo: { safra: meta.safra, ano: meta.ano, mes: meta.mes }
+        periodo: {
+          safra: Array.from(meta.periodo.safra),
+          ano:   Array.from(meta.periodo.ano),
+          mes:   Array.from(meta.periodo.mes),
+        }
       }))
     }))
   }));
 }
-  
-  let treeApi = null;
-  function mountTreeWidget(){
+
+let treeApi = null;
+function mountTreeWidget(){
     const costCenters = state.centros.map(c=>c.nome);
     async function loadData(){ return buildTreeDataForWidget(); }
     if (window.DemonstrativoTreeWidget && typeof window.DemonstrativoTreeWidget.mount === 'function') {

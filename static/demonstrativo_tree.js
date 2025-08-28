@@ -12,43 +12,57 @@
   const slugify = str => String(str).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'-').toLowerCase();
   function extractCostCenters(data){ const set = new Set(); const walk=n=>{ if(n.ccValues) Object.keys(n.ccValues).forEach(cc=>set.add(cc)); if(n.items) n.items.forEach(walk); }; data.forEach(walk); return Array.from(set).sort(); }
 function passesFilters(node, st) {
-  if (st.filterIR && node.ccValues && !(node.flags && node.flags.impostoRenda)) return false;
-  if (node.ccValues && st.periodType && st.periodValue) {
+    if (st.filterIR && node.ccValues && !(node.flags && node.flags.impostoRenda)) return false;
+
+    if (node.ccValues && st.periodType && st.periodValue) {
     const p = node.periodo || {};
-    if (st.periodType === 'safra' && String(p.safra) !== String(st.periodValue)) return false;
-    if (st.periodType === 'ano'   && String(p.ano)   !== String(st.periodValue)) return false;
-    if (st.periodType === 'mes'   && String(p.mes)   !== String(st.periodValue)) return false;
+    const want = String(st.periodValue);
+
+    const matches = (val) => {
+      if (val == null) return false;
+      if (Array.isArray(val) || val instanceof Set) {
+        return Array.from(val).map(String).includes(want);
+      }
+      return String(val) === want;
+    };
+
+    if (st.periodType === 'safra' && !matches(p.safra)) return false;
+    if (st.periodType === 'ano'   && !matches(p.ano))   return false;
+    if (st.periodType === 'mes'   && !matches(p.mes))   return false;
   }
+
   return true;
 }
-  
+
   function calcNodeTotal(node, selectedCCs, st){ if(!passesFilters(node,st)) return 0; if(node.ccValues){ return Object.entries(node.ccValues).filter(([cc])=>selectedCCs.has(cc)).reduce((s,[,v])=>s+(Number(v)||0),0);} if(node.items){ return node.items.reduce((s,ch)=>s+calcNodeTotal(ch,selectedCCs,st),0);} return 0; }
-  function discoverSafrasAndAnos(data){ 
+ function discoverSafrasAndAnos(data){ 
   const safras=new Set(), anos=new Set(), meses=new Set();
-  const walk=n=>{
-    if(n.periodo){
-      if(n.periodo.safra!=null) safras.add(String(n.periodo.safra));
-      if(n.periodo.ano  !=null) anos.add(String(n.periodo.ano));
-      if(n.periodo.mes  !=null) meses.add(String(n.periodo.mes)); // normaliza para string
+  const addMany = (v, bag) => {
+    if (v == null) return;
+    if (Array.isArray(v) || v instanceof Set) { for (const x of v) bag.add(String(x)); }
+    else bag.add(String(v));
+  };
+  const walk = n => {
+    if (n.periodo){
+      addMany(n.periodo.safra, safras);
+      addMany(n.periodo.ano,   anos);
+      addMany(n.periodo.mes,   meses);
     }
-    if(n.items) n.items.forEach(walk);
+    if (n.items) n.items.forEach(walk);
   };
   data.forEach(walk);
 
   const sortSmart = arr => arr.slice().sort((a,b)=>{
-    const re=/^\d{4}-\d{1,2}$/;               // ex.: "2025-09"
+    const re=/^\d{4}-\d{1,2}$/;
     if(re.test(a) && re.test(b)) return new Date(a+'-01') - new Date(b+'-01');
-    const na=Number(a), nb=Number(b);         // ex.: "9" vs "10"
+    const na=Number(a), nb=Number(b);
     if(!Number.isNaN(na) && !Number.isNaN(nb)) return na-nb;
-    return String(a).localeCompare(String(b)); // fallback
+    return String(a).localeCompare(String(b));
   });
 
-  return {
-    safras: sortSmart([...safras]),
-    anos:   sortSmart([...anos]),
-    meses:  sortSmart([...meses]),
-  };
+  return { safras: sortSmart([...safras]), anos: sortSmart([...anos]), meses: sortSmart([...meses]) };
 }
+
   function ensureStyle(){ if(document.getElementById('sf-tree-style')) return; const s=document.createElement('style'); s.id='sf-tree-style'; s.textContent=CSS; document.head.appendChild(s); }
 
   function mount(root, opts={}){
