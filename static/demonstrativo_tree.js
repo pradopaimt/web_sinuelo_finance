@@ -187,13 +187,12 @@ function passesFilters(node, st) {
   const fmtLabel = (v)=>{
     const s=String(v);
     if(state.periodType==='mes'){
-      if(/^\d{4}-\d{1,2}$/.test(s)) {
-        return new Date(s+'-01').toLocaleDateString('pt-BR',{month:'long', year:'numeric'});
-      }
-      const n=Number(s);
-      if(!Number.isNaN(n) && n>=1 && n<=12) {
-        return new Date(2000,n-1,1).toLocaleDateString('pt-BR',{month:'long'});
-      }
+       const m = s.match(/^(\d{4})-(\d{1,2})$/);
+    if (m) {
+      const y = Number(m[1]), mo = Number(m[2]);
+      const d = new Date(Date.UTC(y, mo - 1, 1));
+      return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    }
     }
     return s;
   };

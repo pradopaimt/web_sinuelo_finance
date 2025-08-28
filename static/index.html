@@ -877,7 +877,7 @@ function buildTreeDataForWidget(){
     const d   = new Date(x.data + 'T00:00:00');
     const ano = String(d.getFullYear());
     const safra = safraLabel(x.data);
-    const mes = x.data.slice(0,7); // YYYY-MM
+    const mes = x.data.slice(0,7);
 
     tree[natureza] ??= {};
     tree[natureza][conta] ??= {};
@@ -890,8 +890,6 @@ function buildTreeDataForWidget(){
 
     meta.cc[centro] = (meta.cc[centro] || 0) + valor;
     if (x.ir) meta.ir = true;
-
-    // acumula períodos (vários meses/anos/safras)
     meta.periodo.ano.add(ano);
     meta.periodo.safra.add(String(safra));
     meta.periodo.mes.add(String(mes));
