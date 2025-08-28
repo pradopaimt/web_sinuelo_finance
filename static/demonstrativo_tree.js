@@ -52,13 +52,19 @@ function passesFilters(node, st) {
   };
   data.forEach(walk);
 
-  const sortSmart = arr => arr.slice().sort((a,b)=>{
-    const re=/^\d{4}-\d{1,2}$/;
-    if(re.test(a) && re.test(b)) return new Date(a+'-01') - new Date(b+'-01');
-    const na=Number(a), nb=Number(b);
-    if(!Number.isNaN(na) && !Number.isNaN(nb)) return na-nb;
-    return String(a).localeCompare(String(b));
-  });
+const sortSmart = (arr) => arr.slice().sort((a, b) => {
+  const re = /^\d{4}-\d{1,2}$/;
+  if (re.test(a) && re.test(b)) {
+    const toUTC = (s) => {
+      const [y, m] = s.split('-').map(Number);
+      return Date.UTC(y, m - 1, 1);
+    };
+    return toUTC(a) - toUTC(b);
+  }
+  const na = Number(a), nb = Number(b);
+  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+  return String(a).localeCompare(String(b));
+});
 
   return { safras: sortSmart([...safras]), anos: sortSmart([...anos]), meses: sortSmart([...meses]) };
 }
@@ -192,10 +198,16 @@ function passesFilters(node, st) {
       const y = Number(m[1]), mo = Number(m[2]);
       const d = new Date(Date.UTC(y, mo - 1, 1));
       return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+	}
+	 const n = Number(s);
+    if (!Number.isNaN(n) && n >= 1 && n <= 12) {
+      const d = new Date(Date.UTC(2000, n - 1, 1));
+      return d.toLocaleDateString('pt-BR', { month: 'long', timeZone: 'UTC' });
     }
-    }
+	}
     return s;
   };
+  
     arr.forEach(v=>{
     const o=document.createElement('option');
     o.value = String(v);          // <-- sempre string
