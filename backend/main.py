@@ -75,7 +75,8 @@ def oauth2callback(request: Request):
         redirect_uri=REDIRECT_URI,
         state=state
     )
-    flow.fetch_token(authorization_response=str(request.url))
+    auth_response = str(request.url).replace("http://", "https://")
+    flow.fetch_token(authorization_response=auth_response)
     user_credentials = flow.credentials
     # salva token para persistir entre reinícios
     with open(TOKEN_FILE, "w") as token:
