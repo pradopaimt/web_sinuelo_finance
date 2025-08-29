@@ -2,11 +2,13 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-import pathlib, os, json, io, base64
-from google.oauth2 import service_account
+import pathlib, os, io
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
-
+from fastapi import Request
+from fastapi.responses import RedirectResponse
+from google_auth_oauthlib.flow import Flow
+from google.oauth2.credentials import Credentials
 from . import models, schemas
 from .database import SessionLocal
 from .seed import seed_taxonomy
@@ -22,19 +24,62 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 async def index():
     return FileResponse(static_dir / "index.html")
     
-# ---- Configuração do Google Drive ----
+# ---- Configuração OAuth ----
+CLIENT_SECRETS_FILE = "credentials.json" 
+SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+REDIRECT_URI = "https://sinuelo-finance-api.fly.dev/oauth2callback"
+TOKEN_FILE = "token.json"
 
-raw_secret = os.getenv("GOOGLE_SERVICE_KEY")
-if not raw_secret:
-    raise RuntimeError("GOOGLE_SERVICE_KEY não configurado")
+user_credentials = None
 
-decoded = base64.b64decode(raw_secret).decode("utf-8")
-creds_dict = json.loads(decoded)
+creds_json = os.environ.get("GOOGLE_OAUTH_CREDENTIALS")
+if creds_json:
+    with open(CLIENT_SECRETS_FILE, "w") as f:
+        f.write(creds_json)
 
-creds = service_account.Credentials.from_service_account_info(creds_dict)
-drive_service = build("drive", "v3", credentials=creds)
+def load_credentials():
+    global user_credentials
+    if os.path.exists(TOKEN_FILE):
+        user_credentials = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+        
+@app.on_event("startup")
+def startup_event():
+    # insere naturezas/contas/categorias se não existir
+    db = SessionLocal()
+    seed_taxonomy(db)
+    db.close()
+    # tenta carregar credenciais salvas
+    load_credentials() 
 
-FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER") 
+@app.get("/authorize")
+def authorize():
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRETS_FILE,
+        scopes=SCOPES,
+        redirect_uri=REDIRECT_URI
+    )
+    authorization_url, state = flow.authorization_url(
+        access_type="offline",
+        include_granted_scopes="true"
+    )
+    return RedirectResponse(authorization_url)
+
+@app.get("/oauth2callback")
+def oauth2callback(request: Request):
+    global user_credentials
+    state = request.query_params.get("state")
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRETS_FILE,
+        scopes=SCOPES,
+        redirect_uri=REDIRECT_URI,
+        state=state
+    )
+    flow.fetch_token(authorization_response=str(request.url))
+    user_credentials = flow.credentials
+    # salva token para persistir entre reinícios
+    with open(TOKEN_FILE, "w") as token:
+        token.write(user_credentials.to_json())
+    return {"status": "Autenticado com sucesso!"}
 
 # Dependency para injetar sessão em cada request
 def get_db():
@@ -43,13 +88,6 @@ def get_db():
         yield db
     finally:
         db.close()
-    
-@app.on_event("startup")
-def startup_event():
-    # insere naturezas/contas/categorias se não existir
-    db = SessionLocal()
-    seed_taxonomy(db)
-    db.close()
 
 @app.get("/api/naturezas", response_model=list[schemas.NaturezaOut])
 def list_naturezas(db: Session = Depends(get_db)):
@@ -62,24 +100,26 @@ def list_contas(code: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Natureza não encontrada")
     return nat.contas
 
+# ---- Upload de arquivo ----
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...)):
-    contents = await file.read()
+    global user_credentials
+    if not user_credentials:
+        raise HTTPException(status_code=401, detail="Usuário não autenticado. Acesse /authorize primeiro.")
 
+    contents = await file.read()
     media = MediaIoBaseUpload(io.BytesIO(contents), mimetype=file.content_type)
-    file_metadata = {"name": file.filename, "parents": [FOLDER_ID]} if FOLDER_ID else {"name": file.filename}
-    f = drive_service.files().create(
+    file_metadata = {"name": file.filename,  "parents": ["1DyLOUlFknjZszui8sy5mb8tSvsXO0SlT"]}
+
+    service = build("drive", "v3", credentials=user_credentials)
+    f = service.files().create(
         body=file_metadata,
         media_body=media,
         fields="id, name, webViewLink"
     ).execute()
-    drive_service.permissions().create(
-    fileId=f["id"],
-    body={"type": "anyone", "role": "reader"}
-    ).execute()
-    
+
     return {"id": f["id"], "name": f["name"], "url": f["webViewLink"]}
-    
+
 # ---- Contas → Categorias ----
 @app.get("/api/contas/{conta_id}/categorias", response_model=list[schemas.CategoriaOut])
 def list_categorias(conta_id: int, db: Session = Depends(get_db)):
