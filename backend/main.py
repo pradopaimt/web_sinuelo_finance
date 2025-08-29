@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-import pathlib, os, io
+import pathlib, os, io, base64
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 from fastapi import Request
@@ -32,8 +32,9 @@ TOKEN_FILE = "token.json"
 
 user_credentials = None
 
-creds_json = os.environ.get("GOOGLE_OAUTH_CREDENTIALS")
-if creds_json:
+creds_b64 = os.environ.get("GOOGLE_OAUTH_CREDENTIALS_BASE64")
+if creds_b64:
+    creds_json = base64.b64decode(creds_b64).decode("utf-8")
     with open(CLIENT_SECRETS_FILE, "w") as f:
         f.write(creds_json)
 
