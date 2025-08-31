@@ -13,7 +13,7 @@ class Conta(Base):
     id = Column(Integer, primary_key=True, index=True)
     natureza_code = Column(String, ForeignKey("natureza.code"), nullable=False)
     nome = Column(String, nullable=False)
-
+    ativo = Column(Boolean, default=True)   
     natureza = relationship("Natureza", back_populates="contas")
     categorias = relationship("Categoria", back_populates="conta", cascade="all, delete")
 
@@ -22,7 +22,7 @@ class Categoria(Base):
     id = Column(Integer, primary_key=True, index=True)
     conta_id = Column(Integer, ForeignKey("conta.id"), nullable=False)
     nome = Column(String, nullable=False)
-
+    ativo = Column(Boolean, default=True)   
     conta = relationship("Conta", back_populates="categorias")
 
 class Centro(Base):

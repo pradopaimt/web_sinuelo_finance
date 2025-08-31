@@ -39,14 +39,13 @@ class ContaCreate(ContaBase):
 
 class ContaUpdate(BaseModel):
     nome: Optional[str] = None
-
+    ativo: Optional[bool] = None
 
 class ContaOut(ContaBase):
     id: int
-
+    ativo: bool
     class Config:
         orm_mode = True
-
 
 # -----------------------------
 # Categoria
@@ -62,11 +61,11 @@ class CategoriaCreate(CategoriaBase):
 
 class CategoriaUpdate(BaseModel):
     nome: Optional[str] = None
-
+    ativo: Optional[bool] = None
 
 class CategoriaOut(CategoriaBase):
     id: int
-
+    ativo: bool
     class Config:
         orm_mode = True
 

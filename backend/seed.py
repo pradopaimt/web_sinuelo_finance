@@ -48,14 +48,14 @@ def seed_taxonomy(db: Session):
                 {"nome": "MANUTENÇÃO DE INSTALAÇÕES", "cats": ["EMPREITEIROS", "INSUMO E MATERIAIS", "OUTROS"]},
                 {"nome": "PASTAGENS", "cats": ["SEMENTE E MUDAS","ADUBOS E FERTILIZANTES","DEFENSIVOS E HERBICIDAS","MATERIAIS E FERRAMENTAS","OUTROS"]},
                 {"nome": "MANUTENÇÃO DE MÁQUINAS E VEÍCULOS", "cats": [
-                    "DO-MANUTENÇÃO MÁQUINAS-TRATOR MF 4275","DO-MANUTENÇÃO MÁQUINAS-TRATOR MF 4292",
-                    "DO-MANUTENÇÃO MÁQUINAS-TRATOR CASE 180","DO-MANUTENÇÃO MÁQUINAS-TRATOR MF 65X",
-                    "DO-MANUTENÇÃO MÁQUINAS-TRATOR JD 5078","DO-MANUTENÇÃO MÁQUINAS-PA XCMG ZL30BR",
-                    "DO-MANUTENÇÃO MÁQUINAS-COLHEDadeira 1550","DO-MANUTENÇÃO MÁQUINAS-COLHEDadeira 7500",
-                    "DO-MANUTENÇÃO MÁQUINAS-PLANTADEIRA MF","DO-MANUTENÇÃO MÁQUINAS-PULVERIZADOR 3000 ADVANCED",
-                    "DO-MANUTENÇÃO MÁQUINAS-IMPLEMENTOS","DO-MANUTENÇÃO MÁQUINAS-VEÍCULOS",
-                    "DO-MANUTENÇÃO MÁQUINAS-MOTO","DO-MANUTENÇÃO MÁQUINAS-INSUMOS",
-                    "DO-MANUTENÇÃO MÁQUINAS-LUBRIFICANTES, FILTROS E GRAXAS","OUTROS"
+                    "TRATOR MF 4275","TRATOR MF 4292",
+                    "TRATOR CASE 180","TRATOR MF 65X",
+                    "TRATOR JD 5078","PA XCMG ZL30BR",
+                    "COLHETADEIRA 1550","COLHETADEIRA 7500",
+                    "PLANTADEIRA MF","PULVERIZADOR 3000 ADVANCED",
+                    "IMPLEMENTOS","VEÍCULOS",
+                    "MOTO","DO-MANUTENÇÃO MÁQUINAS-INSUMOS",
+                    "LUBRIFICANTES, FILTROS E GRAXAS","OUTROS"
                 ]},
                 {"nome": "GRÃOS", "cats": [
                     "SEMENTES","ADUBOS E FERTILIZANTES","INOCULANTES","ADUBOS FOLIARES",

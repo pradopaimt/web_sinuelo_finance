@@ -100,7 +100,7 @@ def list_contas(code: str, db: Session = Depends(get_db)):
     nat = db.query(models.Natureza).filter(models.Natureza.code == code).first()
     if not nat:
         raise HTTPException(status_code=404, detail="Natureza não encontrada")
-    return nat.contas
+    return [c for c in nat.contas if c.ativo]
 
 # ---- Upload de arquivo ----
 @app.post("/api/upload")
@@ -128,7 +128,7 @@ def list_categorias(conta_id: int, db: Session = Depends(get_db)):
     conta = db.query(models.Conta).filter_by(id=conta_id).first()
     if not conta:
         raise HTTPException(status_code=404, detail="Conta não encontrada")
-    return conta.categorias
+    return [cat for cat in conta.categorias if cat.ativo]
 
 
 # ---- Centros ----
@@ -186,3 +186,23 @@ def delete_lancamento(lanc_id: int, db: Session = Depends(get_db)):
     db.delete(obj)
     db.commit()
     return {"detail": "Lançamento removido"}
+
+@app.put("/api/contas/{conta_id}/inativar", response_model=schemas.ContaOut)
+def inativar_conta(conta_id: int, db: Session = Depends(get_db)):
+    conta = db.query(models.Conta).filter_by(id=conta_id).first()
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    conta.ativo = False
+    db.commit()
+    db.refresh(conta)
+    return conta
+
+@app.put("/api/categorias/{cat_id}/inativar", response_model=schemas.CategoriaOut)
+def inativar_categoria(cat_id: int, db: Session = Depends(get_db)):
+    cat = db.query(models.Categoria).filter_by(id=cat_id).first()
+    if not cat:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    cat.ativo = False
+    db.commit()
+    db.refresh(cat)
+    return cat
