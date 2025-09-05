@@ -1,5 +1,5 @@
 // Nome do cache (troque a versão quando fizer alterações importantes)
-const CACHE_NAME = "sinuelo-cache-v14"; // bump a versão para forçar update
+const CACHE_NAME = "sinuelo-cache-v15"; // bump a versão para forçar update
 
 const ASSETS = [
   "/static/",
