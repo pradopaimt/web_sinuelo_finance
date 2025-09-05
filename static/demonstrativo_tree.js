@@ -1,12 +1,48 @@
 (function(){
   const CSS = `:root{--bg:#0f172a;--panel:#111827;--muted:#94a3b8;--text:#e5e7eb;--accent:#22c55e;--border:#1f2937;--hover:#0b1222;--info:#93c5fd}*{box-sizing:border-box} .sf-card{background:rgba(17,24,39,.75);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);backdrop-filter:blur(6px)} .sf-header{padding:16px 20px;display:flex;gap:12px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)} .sf-title{font-size:18px;margin:0;font-weight:600;color:var(--text)} .sf-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end} .sf-group{display:flex;align-items:center;gap:8px;background:#0b1222;border:1px solid var(--border);padding:8px 10px;border-radius:12px} .sf-group .title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em} .sf-pill{display:inline-flex;align-items:center;gap:8px;background:#0b1222;border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:999px;cursor:pointer;user-select:none} .sf-pill input{accent-color:var(--accent)} .sf-btn{background:#0b1222;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer} .sf-btn:hover{background:#0d162b} .sf-select{background:#0b1222;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:6px 8px} .sf-content{padding:8px 8px 12px} table.sf{width:100%;border-collapse:collapse;font-size:14px} table.sf thead th{text-align:left;font-weight:600;color:var(--muted);padding:10px 8px;border-bottom:1px solid var(--border)} table.sf tbody td{padding:8px;border-bottom:1px dashed #162033} .sf-name{display:flex;align-items:center;gap:8px} .sf-toggle{width:22px;height:22px;border-radius:6px;border:1px solid var(--border);display:inline-grid;place-items:center;cursor:pointer;background:#0b1222;color:var(--muted);font-weight:700;user-select:none} .sf-toggle:hover{background:#0d162b} .indent-0{padding-left:0}.indent-1{padding-left:20px}.indent-2{padding-left:40px}.indent-3{padding-left:60px} .sf-badge{display:inline-block;background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.4);padding:2px 8px;border-radius:999px;font-size:12px} .sf-note{color:var(--muted);font-size:12px;padding:10px 12px} .sf-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px;border-bottom:1px solid var(--border)} .sf-kpi .box{background:#0b1222;border:1px solid var(--border);border-radius:12px;padding:12px} .sf-kpi .box h3{margin:0 0 6px;font-size:12px;color:var(--muted);font-weight:600} .sf-kpi .box div{font-size:16px;font-weight:700} tfoot td{font-weight:700;border-top:1px solid var(--border);padding-top:10px} @media (max-width:720px){.sf-kpi{grid-template-columns:1fr 1fr}.sf-header{align-items:start;flex-direction:column;gap:12px}.sf-controls{justify-content:flex-start}.sf-group{width:100%;flex-wrap:wrap}}`;
 
-  const mockData = [
-    { natureza:"Receita Operacional", items:[{categoria:"Vendas", items:[{conta:"Venda Gado Corte", ccValues:{"CC – Cria":125000, "CC – Recria":88000}, flags:{impostoRenda:false}, periodo:{safra:"24-25", ano:2025}}, {conta:"Venda Bezerros", ccValues:{"CC – Cria":54000, "CC – Recria":22000}, flags:{impostoRenda:false}, periodo:{safra:"24-25", ano:2025}}]}, {categoria:"Serviços", items:[{conta:"Arrendamento", ccValues:{"CC – Geral":12000}, flags:{impostoRenda:true}, periodo:{safra:"24-25", ano:2025}}]}]},
-    { natureza:"Receita Não Operacional", items:[{categoria:"Financeiras", items:[{conta:"Juros Recebidos", ccValues:{"CC – Geral":3500}, flags:{impostoRenda:true}, periodo:{safra:"24-25", ano:2025}}]}]},
-    { natureza:"Despesa Operacional", items:[{categoria:"Nutrição", items:[{conta:"Ração", ccValues:{"CC – Recria":38000, "CC – Engorda":21000}, flags:{impostoRenda:false}, periodo:{safra:"24-25", ano:2025}}, {conta:"Sal Mineral", ccValues:{"CC – Cria":9000, "CC – Recria":6000}, flags:{impostoRenda:false}, periodo:{safra:"24-25", ano:2025}}]}, {categoria:"Sanidade", items:[{conta:"Vacinas", ccValues:{"CC – Cria":4500, "CC – Recria":4100}, flags:{impostoRenda:false}, periodo:{safra:"24-25", ano:2025}}]}]},
-    { natureza:"Despesa Não Operacional", items:[{categoria:"Financeiras", items:[{conta:"Juros Pagos", ccValues:{"CC – Geral":4200}, flags:{impostoRenda:true}, periodo:{safra:"24-25", ano:2025}}]}, {categoria:"Administrativas", items:[{conta:"Contabilidade", ccValues:{"CC – Geral":7000}, flags:{impostoRenda:true}, periodo:{safra:"24-25", ano:2025}}]}]}
-  ];
+const mockData = [
+  { natureza:"Receita Operacional", 
+    items:[
+      {categoria:"Vendas", items:[
+        {conta:"Venda Gado Corte", ccValues:{"CC – Cria":125000, "CC – Recria":88000}, flags:{ dre:false, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}},
+        {conta:"Venda Bezerros", ccValues:{"CC – Cria":54000, "CC – Recria":22000}, flags:{ dre:false, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+      ]}, 
+      {categoria:"Serviços", items:[
+        {conta:"Arrendamento", ccValues:{"CC – Geral":12000}, flags:{ dre:true, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+      ]}
+    ]
+  },
+  { natureza:"Receita Não Operacional",
+    items:[
+      {categoria:"Financeiras", items:[
+        {conta:"Juros Recebidos", ccValues:{"CC – Geral":3500}, flags:{ dre:true, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+      ]}
+    ]
+  },
+  { natureza:"Despesa Operacional", 
+    items:[
+      {categoria:"Nutrição", items:[
+        {conta:"Ração", ccValues:{"CC – Recria":38000, "CC – Engorda":21000}, flags:{ dre:true, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}},
+        {conta:"Sal Mineral", ccValues:{"CC – Cria":9000, "CC – Recria":6000}, flags:{ dre:false, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+      ]}, 
+      {categoria:"Sanidade", items:[
+        {conta:"Vacinas", ccValues:{"CC – Cria":4500, "CC – Recria":4100}, flags:{ dre:false, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+      ]}
+    ]
+  },
+  { natureza:"Despesa Não Operacional", 
+    items:[
+      {categoria:"Financeiras", items:[
+        {conta:"Juros Pagos", ccValues:{"CC – Geral":4200}, flags:{ dre:true, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+      ]}, 
+      {categoria:"Administrativas", items:[
+        {conta:"Contabilidade", ccValues:{"CC – Geral":7000}, flags:{ dre:false, irEduardo:true, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+      ]}
+    ]
+  }
+];
+
 
   const formatBRL = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const slugify = str => String(str).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'-').toLowerCase();
