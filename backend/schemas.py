@@ -126,9 +126,9 @@ class LancamentoUpdate(BaseModel):
     pagamento: Optional[str] = None
     descricao: Optional[str] = None
     fornecedor_cliente: Optional[str] = None
-    dre: bool = False
-    ir_eduardo: bool = False   
-    ir_roberto: bool = False 
+    dre: Optional[bool] = None
+    ir_eduardo: Optional[bool] = None  
+    ir_roberto: Optional[bool] = None
     valor: Optional[Decimal] = None
     anexo_nome: Optional[str] = None
 

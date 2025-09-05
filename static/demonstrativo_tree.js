@@ -5,52 +5,59 @@ const mockData = [
   { natureza:"Receita Operacional", 
     items:[
       {categoria:"Vendas", items:[
-        {conta:"Venda Gado Corte", ccValues:{"CC – Cria":125000, "CC – Recria":88000}, flags:{ dre:false, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}},
-        {conta:"Venda Bezerros", ccValues:{"CC – Cria":54000, "CC – Recria":22000}, flags:{ dre:false, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+        {conta:"Venda Gado Corte", ccValues:{"CC – Cria":125000, "CC – Recria":88000}, flags:{ dre:false, ir_eduardo:false, ir_roberto:false }, periodo:{safra:"24-25", ano:2025}},
+        {conta:"Venda Bezerros", ccValues:{"CC – Cria":54000, "CC – Recria":22000}, flags:{ dre:false, ir_eduardo:false, ir_roberto:false }, periodo:{safra:"24-25", ano:2025}}
       ]}, 
       {categoria:"Serviços", items:[
-        {conta:"Arrendamento", ccValues:{"CC – Geral":12000}, flags:{ dre:true, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+        {conta:"Arrendamento", ccValues:{"CC – Geral":12000}, flags:{ dre:true, ir_eduardo:false, ir_roberto:false }, periodo:{safra:"24-25", ano:2025}}
       ]}
     ]
   },
   { natureza:"Receita Não Operacional",
     items:[
       {categoria:"Financeiras", items:[
-        {conta:"Juros Recebidos", ccValues:{"CC – Geral":3500}, flags:{ dre:true, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+        {conta:"Juros Recebidos", ccValues:{"CC – Geral":3500}, flags:{ dre:true, ir_eduardo:false, ir_roberto:false }, periodo:{safra:"24-25", ano:2025}}
       ]}
     ]
   },
   { natureza:"Despesa Operacional", 
     items:[
       {categoria:"Nutrição", items:[
-        {conta:"Ração", ccValues:{"CC – Recria":38000, "CC – Engorda":21000}, flags:{ dre:true, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}},
-        {conta:"Sal Mineral", ccValues:{"CC – Cria":9000, "CC – Recria":6000}, flags:{ dre:false, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+        {conta:"Ração", ccValues:{"CC – Recria":38000, "CC – Engorda":21000}, flags:{ dre:true, ir_eduardo:false, ir_roberto:false }, periodo:{safra:"24-25", ano:2025}},
+        {conta:"Sal Mineral", ccValues:{"CC – Cria":9000, "CC – Recria":6000}, flags:{ dre:false, ir_eduardo:false, ir_roberto:false }, periodo:{safra:"24-25", ano:2025}}
       ]}, 
       {categoria:"Sanidade", items:[
-        {conta:"Vacinas", ccValues:{"CC – Cria":4500, "CC – Recria":4100}, flags:{ dre:false, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+        {conta:"Vacinas", ccValues:{"CC – Cria":4500, "CC – Recria":4100}, flags:{ dre:false, ir_eduardo:false, ir_roberto:false }, periodo:{safra:"24-25", ano:2025}}
       ]}
     ]
   },
   { natureza:"Despesa Não Operacional", 
     items:[
       {categoria:"Financeiras", items:[
-        {conta:"Juros Pagos", ccValues:{"CC – Geral":4200}, flags:{ dre:true, irEduardo:false, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+        {conta:"Juros Pagos", ccValues:{"CC – Geral":4200}, flags:{ dre:true, ir_eduardo:false, ir_roberto:false }, periodo:{safra:"24-25", ano:2025}}
       ]}, 
       {categoria:"Administrativas", items:[
-        {conta:"Contabilidade", ccValues:{"CC – Geral":7000}, flags:{ dre:false, irEduardo:true, irRoberto:false }, periodo:{safra:"24-25", ano:2025}}
+        {conta:"Contabilidade", ccValues:{"CC – Geral":7000}, flags:{ dre:false, ir_eduardo:true, ir_roberto:false }, periodo:{safra:"24-25", ano:2025}}
       ]}
     ]
   }
 ];
 
+function hasFlag(node, key) {
+  // se o próprio nó tem a flag, retorna true
+  if (node.flags && node.flags[key]) return true;
+  // se tem filhos, testa qualquer filho
+  if (node.items) return node.items.some(child => hasFlag(child, key));
+  return false;
+}
 
   const formatBRL = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const slugify = str => String(str).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'-').toLowerCase();
   function extractCostCenters(data){ const set = new Set(); const walk=n=>{ if(n.ccValues) Object.keys(n.ccValues).forEach(cc=>set.add(cc)); if(n.items) n.items.forEach(walk); }; data.forEach(walk); return Array.from(set).sort(); }
 function passesFilters(node, st) {
-	if (st.filterDRE && !(node.flags && node.flags.dre)) return false;
-	if (st.filterIREduardo && !(node.flags && node.flags.irEduardo)) return false;
-	if (st.filterIRRoberto && !(node.flags && node.flags.irRoberto)) return false;
+  if (st.filterDRE && !hasFlag(node, 'dre')) return false;
+  if (st.filterir_eduardo && !hasFlag(node, 'ir_eduardo')) return false;
+  if (st.filterir_roberto && !hasFlag(node, 'ir_roberto')) return false;
     if (node.ccValues && st.periodType && st.periodValue) {
     const p = node.periodo || {};
     const want = String(st.periodValue);
@@ -121,8 +128,8 @@ const sortSmart = (arr) => arr.slice().sort((a, b) => {
       periodType: 'safra',
       periodValue: '',
    	  filterDRE: false,
-	  filterIREduardo: false,
-      filterIRRoberto: false,
+	  filterir_eduardo: false,
+      filterir_roberto: false,
     };
 
     const html = `
@@ -214,8 +221,8 @@ const sortSmart = (arr) => arr.slice().sort((a, b) => {
 	gFlags.innerHTML = `<span class="title">Filtros</span>`;
 	[
 	{id:'sf-dre', label:'Somente DRE – Sinuelo', key:'filterDRE'},
-	{id:'sf-ir-edu', label:'Somente IR – Eduardo Paim', key:'filterIREduardo'},
-	{id:'sf-ir-rob', label:'Somente IR – Roberto Paim', key:'filterIRRoberto'},
+	{id:'sf-ir-edu', label:'Somente IR – Eduardo Paim', key:'filterir_eduardo'},
+	{id:'sf-ir-rob', label:'Somente IR – Roberto Paim', key:'filterir_roberto'},
 	].forEach(f=>{
 	const lbl=document.createElement('label'); lbl.className='sf-pill';
 	lbl.innerHTML=`<input type="checkbox" id="${f.id}" ${state[f.key]?'checked':''}/> ${f.label}`;
@@ -328,8 +335,8 @@ function row({ id, level, name, total, percent, expandable, isOpen }){
       setData: (data, costCenters)=> setData(data, costCenters),
       setPeriodo: (tipo, valor)=>{ state.periodType=tipo; state.periodValue=valor; renderAll(); },
       setFiltroDRE: on => { state.filterDRE = !!on; renderAll(); },
-	  setFiltroIREduardo: on => { state.filterIREduardo = !!on; renderAll(); },
-	  setFiltroIRRoberto: on => { state.filterIRRoberto = !!on; renderAll(); },
+	  setFiltroir_eduardo: on => { state.filterir_eduardo = !!on; renderAll(); },
+	  setFiltroir_roberto: on => { state.filterir_roberto = !!on; renderAll(); },
       expandAll: ()=>{ collectAllRowIds().forEach(id=>state.expanded.add(id)); renderAll(); },
       collapseAll: ()=>{ state.expanded.clear(); renderAll(); }
     };
