@@ -872,7 +872,15 @@ function fillPcSelectors() {
     o.textContent = `${n.code} — ${n.nome}`;
     pcNat.appendChild(o);
   });
-  fillPcContas();
+  fillPcContas(); // carrega contas da natureza inicial
+}
+
+const pcNatEl = document.getElementById('pcNat');
+if (pcNatEl) {
+  pcNatEl.addEventListener('change', () => {
+    fillPcContas();    // troca as contas
+    fillCategorias();  // e já troca categorias da conta selecionada
+  });
 }
 
 function fillPcContas() {
@@ -884,6 +892,7 @@ function fillPcContas() {
     o.textContent = c.nome;
     pcConta.appendChild(o);
   });
+  fillCategorias(); // ← importante: garantir que categorias sejam atualizadas
 }
  
     // ===== Centros (na aba Plano de Contas) =====
