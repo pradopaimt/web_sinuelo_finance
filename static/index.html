@@ -371,9 +371,9 @@
           pagamento: item.pagamento,
           descricao: item.descricao,
 		  fornecedor_cliente: item.fornecedor_cliente || '',
-          dre: !!item.dre,
-		  ir_eduardo: !!item.ir_eduardo,
-		  ir_roberto: !!item.ir_roberto,
+          dre: toBool(item.dre),
+		  ir_eduardo: toBool(item.ir_eduardo),
+          ir_roberto: toBool(item.ir_roberto),
           valor: Number(item.valor)||0,
           anexo_nome: item.anexo_nome || null
         };
@@ -410,9 +410,9 @@
       pagamento: item.pagamento ?? '',
       descricao: item.descricao ?? '',
       fornecedor_cliente: item.fornecedor_cliente ?? '',
-      dre: !!item.dre,
-	  ir_eduardo: !!item.ir_eduardo,
-	  ir_roberto: !!item.ir_roberto,
+      dre: toBool(item.dre),
+      ir_eduardo: toBool(item.ir_eduardo),
+      ir_roberto: toBool(item.ir_roberto),
       valor: item.valor,
       anexo_nome: item.anexo_nome ?? null
     };
@@ -441,6 +441,10 @@
   return res.json(); // { id, name, url }
 }
     // ===== Helpers de selects =====
+ const toBool = (v) =>
+  v === true || v === 1 || v === '1' ||
+  (typeof v === 'string' && v.trim().toLowerCase() === 'true');
+  
  function fillNatureza(){
     const elNat = document.getElementById('natureza');
     if (!elNat) return;
@@ -634,9 +638,9 @@ function upsertLancamento(localData, saved) {
     pagamento: saved.pagamento,
     descricao: saved.descricao,
     fornecedor_cliente: saved.fornecedor_cliente || '',
-	dre: saved.dre,
-	ir_eduardo: saved.ir_eduardo,
-	ir_roberto: saved.ir_roberto,
+	dre: toBool(saved.dre),
+	ir_eduardo: toBool(saved.ir_eduardo),
+	ir_roberto: toBool(saved.ir_roberto),
     valor: Number(saved.valor) || 0,
     anexo_nome: saved.anexo_nome || null
   };
