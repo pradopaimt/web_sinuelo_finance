@@ -44,10 +44,16 @@ const mockData = [
 ];
 
 function hasFlag(node, key) {
-  // se o próprio nó tem a flag, retorna true
-  if (node.flags && node.flags[key]) return true;
-  // se tem filhos, testa qualquer filho
-  if (node.items) return node.items.some(child => hasFlag(child, key));
+  const val = node.flags?.[key];
+  if (val !== undefined) {
+    if (typeof val === 'string') {
+      return val.trim().toLowerCase() === 'true';
+    }
+    return Boolean(val);
+  }
+  if (node.items) {
+    return node.items.some(child => hasFlag(child, key));
+  }
   return false;
 }
 
