@@ -43,6 +43,7 @@
     button{appearance:none; border:none; padding:12px 16px; border-radius:12px; cursor:pointer; background:var(--accent); color:#052e16; font-weight:700; box-shadow:var(--shadow)}
     button.secondary{background:#0b1220; color:var(--text); border:1px solid rgba(255,255,255,.1)}
     button.danger{background:var(--danger); color:#310808}
+	button.danger {padding: 6px 10px;font-size: 12px; border-radius: 8px; }
     .btns{display:flex; gap:8px; flex-wrap:wrap}
     .kpis{display:grid; grid-template-columns: 1fr; gap:12px}
     .kpi{background:#0b1220;border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px}
@@ -68,7 +69,7 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>Financeiro - Agropecuária Sinuelo</h1>
-          <div style="font-size:12px; color:var(--muted)">v28.08.2025</div>
+          <div style="font-size:12px; color:var(--muted)">v05.09.2025</div>
         </div>
       </div>
       <nav style="margin-top:14px">
@@ -225,6 +226,9 @@
 			  <th>Descrição</th>
               <th>Valor</th>
               <th>Pagamento</th>
+			  <th>DRE</th>
+			  <th>IR Eduardo</th>
+			  <th>IR Roberto</th>
 			  <th>Anexo</th>
               <th></th>
             </tr>
@@ -740,6 +744,9 @@ function renderTabela(){
 	<td>${x.descricao||'-'}</td>
 	<td style="font-weight:700">${BRL.format(x.valor)}</td>
 	<td>${x.pagamento||'-'}</td>
+	<td>${x.dre ? '✔️' : ''}</td>
+	<td>${x.ir_eduardo ? '✔️' : ''}</td>
+	<td>${x.ir_roberto ? '✔️' : ''}</td>
 	<td>${anexoHtml}</td>
 	<td style="text-align:right">
     <button class="secondary" onclick="editar(${x.id})">Editar</button>
@@ -873,7 +880,7 @@ function fillPcContas() {
   const n = state.tax.find(x => x.code === pcNat.value);
   n?.contas.filter(c => c.ativo !== false).forEach(c => {
     const o = document.createElement('option');
-    o.value = c.nome;
+    o.value = c.id;
     o.textContent = c.nome;
     pcConta.appendChild(o);
   });
@@ -907,6 +914,25 @@ function fillPcContas() {
       document.getElementById('novoCentro').value='';
       renderCentrosTable(); fillCentros(); updateTreeWidget();
     });
+	
+	document.getElementById('pcAddCat').addEventListener('click', async ()=>{
+  const nome = pcNovaCat.value.trim();
+  const contaId = parseInt(pcConta.value);
+  if(!nome || !contaId) return alert('Selecione uma conta e informe o nome da categoria');
+  const res = await fetch(`${API_BASE}/categorias`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ conta_id: contaId, nome })
+  });
+  if(res.ok){
+    await fetchNaturezas();
+    renderPlanoContas();
+    fillPcContas();
+    pcNovaCat.value='';
+  } else {
+    alert('Falha ao criar categoria');
+  }
+});
 
   // ===== Demonstrativo — integração com o widget =====
 const NAT_LABEL = { RO:'Receita Operacional', RNO:'Receita Não Operacional', DO:'Despesa Operacional', DNO:'Despesa Não Operacional' };
