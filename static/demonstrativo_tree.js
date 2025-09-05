@@ -12,8 +12,9 @@
   const slugify = str => String(str).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'-').toLowerCase();
   function extractCostCenters(data){ const set = new Set(); const walk=n=>{ if(n.ccValues) Object.keys(n.ccValues).forEach(cc=>set.add(cc)); if(n.items) n.items.forEach(walk); }; data.forEach(walk); return Array.from(set).sort(); }
 function passesFilters(node, st) {
-    if (st.filterIR && node.ccValues && !(node.flags && node.flags.impostoRenda)) return false;
-
+	if (st.filterDRE && !(node.flags && node.flags.dre)) return false;
+	if (st.filterIREduardo && !(node.flags && node.flags.irEduardo)) return false;
+	if (st.filterIRRoberto && !(node.flags && node.flags.irRoberto)) return false;
     if (node.ccValues && st.periodType && st.periodValue) {
     const p = node.periodo || {};
     const want = String(st.periodValue);
@@ -83,7 +84,9 @@ const sortSmart = (arr) => arr.slice().sort((a, b) => {
       expanded: new Set(),
       periodType: 'safra',
       periodValue: '',
-      filterIR: false,
+   	  filterDRE: false,
+	  filterIREduardo: false,
+      filterIRRoberto: false,
     };
 
     const html = `
@@ -170,11 +173,23 @@ const sortSmart = (arr) => arr.slice().sort((a, b) => {
       gP.querySelector('#sf-period').addEventListener('change',e=>{ state.periodValue=e.target.value; renderAll(); });
 
       // IR
-      const gIR = document.createElement('div'); gIR.className='sf-group'; gIR.innerHTML = `<span class="title">Filtro</span>
-        <label class="sf-pill"><input type="checkbox" id="sf-ir" ${state.filterIR?'checked':''}/> Somente "Imposto de Renda"</label>`;
-      gIR.querySelector('#sf-ir').addEventListener('change',e=>{ state.filterIR=e.target.checked; renderAll(); });
-      elc.appendChild(gIR);
-
+     const gFlags = document.createElement('div'); 
+	gFlags.className='sf-group'; 
+	gFlags.innerHTML = `<span class="title">Filtros</span>`;
+	[
+	{id:'sf-dre', label:'Somente DRE – Sinuelo', key:'filterDRE'},
+	{id:'sf-ir-edu', label:'Somente IR – Eduardo Paim', key:'filterIREduardo'},
+	{id:'sf-ir-rob', label:'Somente IR – Roberto Paim', key:'filterIRRoberto'},
+	].forEach(f=>{
+	const lbl=document.createElement('label'); lbl.className='sf-pill';
+	lbl.innerHTML=`<input type="checkbox" id="${f.id}" ${state[f.key]?'checked':''}/> ${f.label}`;
+	lbl.querySelector('input').addEventListener('change',e=>{
+    state[f.key]=e.target.checked; renderAll();
+	});
+	gFlags.appendChild(lbl);
+	});
+	elc.appendChild(gFlags);
+	
       // Expand/Collapse
       const gX = document.createElement('div'); gX.className='sf-group';
       const ex = document.createElement('button'); ex.className='sf-btn'; ex.textContent='Expandir tudo'; ex.onclick=()=>{ collectAllRowIds().forEach(id=>state.expanded.add(id)); renderAll(); };
@@ -276,7 +291,9 @@ function row({ id, level, name, total, percent, expandable, isOpen }){
     const api = {
       setData: (data, costCenters)=> setData(data, costCenters),
       setPeriodo: (tipo, valor)=>{ state.periodType=tipo; state.periodValue=valor; renderAll(); },
-      setFiltroIR: on=>{ state.filterIR=!!on; renderAll(); },
+      setFiltroDRE: on => { state.filterDRE = !!on; renderAll(); },
+	  setFiltroIREduardo: on => { state.filterIREduardo = !!on; renderAll(); },
+	  setFiltroIRRoberto: on => { state.filterIRRoberto = !!on; renderAll(); },
       expandAll: ()=>{ collectAllRowIds().forEach(id=>state.expanded.add(id)); renderAll(); },
       collapseAll: ()=>{ state.expanded.clear(); renderAll(); }
     };

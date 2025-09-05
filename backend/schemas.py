@@ -106,7 +106,9 @@ class LancamentoBase(BaseModel):
     pagamento: Optional[str] = None
     descricao: Optional[str] = None
     fornecedor_cliente: Optional[str] = None
-    ir: bool = False
+    dre: bool = False
+    ir_eduardo: bool = False   
+    ir_roberto: bool = False 
     valor: Decimal
     anexo_nome: Optional[str] = None
 
@@ -124,7 +126,9 @@ class LancamentoUpdate(BaseModel):
     pagamento: Optional[str] = None
     descricao: Optional[str] = None
     fornecedor_cliente: Optional[str] = None
-    ir: Optional[bool] = None
+    dre: bool = False
+    ir_eduardo: bool = False   
+    ir_roberto: bool = False 
     valor: Optional[Decimal] = None
     anexo_nome: Optional[str] = None
 

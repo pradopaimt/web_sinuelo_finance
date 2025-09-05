@@ -155,12 +155,20 @@
       </div>
 
       <!-- Linha 5: IR -->
-      <div class="row" style="margin-top:8px">
-        <label class="inline">
-          <input type="checkbox" id="impostoRenda" style="width:auto;margin-right:8px" />
-          Marcar como "Imposto de Renda"
-        </label>
-      </div>
+	<div class="row" style="margin-top:8px">
+		<label class="inline">
+		<input type="checkbox" id="dre" style="width:auto;margin-right:8px" />
+		DRE – Sinuelo
+		</label>
+	<label class="inline">
+    <input type="checkbox" id="ir_eduardo" style="width:auto;margin-right:8px" />
+    IR – Eduardo Paim
+	</label>
+	<label class="inline">
+    <input type="checkbox" id="ir_roberto" style="width:auto;margin-right:8px" />
+    IR – Roberto Paim
+	</label>
+	</div>
 
       <!-- Ações -->
       <div class="btns" style="margin-top:16px">
@@ -368,7 +376,9 @@
           pagamento: item.pagamento,
           descricao: item.descricao,
 		  fornecedor_cliente: item.fornecedor_cliente || '',
-          ir: !!item.ir,
+          dre: !!item.dre,
+		  ir_eduardo: !!item.ir_eduardo,
+		  ir_roberto: !!item.ir_roberto,
           valor: Number(item.valor)||0,
           anexo_nome: item.anexo_nome || null
         };
@@ -382,7 +392,9 @@
           pagamento: item.pagamento ?? '',
 	descricao: item.descricao ?? '',
 	fornecedor_cliente: item.fornecedor_cliente ?? '',
-	ir: !!item.ir,
+	dre: !!item.dre,
+	ir_eduardo: !!item.ir_eduardo,
+	ir_roberto: !!item.ir_roberto,
 	valor: item.valor,
 	anexo_nome: item.anexo_nome ?? null
         };
@@ -403,7 +415,9 @@
       pagamento: item.pagamento ?? '',
       descricao: item.descricao ?? '',
       fornecedor_cliente: item.fornecedor_cliente ?? '',
-      ir: !!item.ir,
+      dre: !!item.dre,
+	  ir_eduardo: !!item.ir_eduardo,
+	  ir_roberto: !!item.ir_roberto,
       valor: item.valor,
       anexo_nome: item.anexo_nome ?? null
     };
@@ -565,8 +579,10 @@ function fillCategorias(){
       descricao: document.getElementById('descricao'),
 	  fornecedor_cliente: document.getElementById('fornecedor_cliente'),
       pagamento: document.getElementById('pagamento'),
-      ir: document.getElementById('impostoRenda'),
-      anexo: document.getElementById('anexo')
+      dre: document.getElementById('dre'),
+	  ir_eduardo: document.getElementById('ir_eduardo'),
+	  ir_roberto: document.getElementById('ir_roberto'),
+	  anexo: document.getElementById('anexo')
     };
 	
 function buildPayloadFromForm() {
@@ -596,7 +612,9 @@ function buildPayloadFromForm() {
     pagamento: elForm.pagamento.value || '',
     descricao: elForm.descricao.value || '',
     fornecedor_cliente: elForm.fornecedor_cliente.value || '',
-    ir: !!elForm.ir?.checked,
+    dre: !!elForm.dre?.checked,
+	ir_eduardo: !!elForm.ir_eduardo?.checked,
+	ir_roberto: !!elForm.ir_roberto?.checked,
     valor: parseBR(elForm.valor.value),
     anexo_nome: elForm.anexo.files[0]?.name || null
   };
@@ -621,7 +639,9 @@ function upsertLancamento(localData, saved) {
     pagamento: saved.pagamento,
     descricao: saved.descricao,
     fornecedor_cliente: saved.fornecedor_cliente || '',
-    ir: saved.ir,
+	dre: saved.dre,
+	ir_eduardo: saved.ir_eduardo,
+	ir_roberto: saved.ir_roberto,
     valor: Number(saved.valor) || 0,
     anexo_nome: saved.anexo_nome || null
   };
@@ -750,7 +770,9 @@ function renderTabela(){
 	  elForm.pagamento.value = x.pagamento || '';
 	  elForm.fornecedor_cliente.value = x.fornecedor_cliente || '';
 	  elForm.descricao.value = x.descricao || '';
-	  elForm.ir.checked = !!x.ir;
+	  elForm.dre.checked = !!x.dre;
+	  elForm.ir_eduardo.checked = !!x.ir_eduardo;
+	  elForm.ir_roberto.checked = !!x.ir_roberto;
 	}
 
     window.excluir = async (id)=>{
@@ -761,7 +783,6 @@ function renderTabela(){
     }
 
 // ===== Plano de Contas =====
-  // ===== Plano de Contas =====
 function renderPlanoContas() {
   const root = document.getElementById('pcTree');
   root.innerHTML = '';
@@ -920,8 +941,10 @@ function buildTreeDataForWidget(){
     }
 
     meta.cc[centro] = (meta.cc[centro] || 0) + valor;
-    if (x.ir) meta.ir = true;
-    meta.periodo.ano.add(ano);
+    if (x.dre) meta.dre = true;
+	if (x.ir_eduardo) meta.ir_eduardo = true;
+	if (x.ir_roberto) meta.ir_roberto = true;	
+	meta.periodo.ano.add(ano);
     meta.periodo.safra.add(String(safra));
     meta.periodo.mes.add(String(mes));
   }
@@ -933,7 +956,10 @@ function buildTreeDataForWidget(){
       items: Object.entries(categoriasObj).map(([catNome, meta]) => ({
         conta: catNome,
         ccValues: meta.cc,
-        flags: { impostoRenda: !!meta.ir },
+        flags: { dre: !!meta.dre,
+			irEduardo: !!meta.ir_eduardo,
+			irRoberto: !!meta.ir_roberto
+				},
         periodo: {
           safra: Array.from(meta.periodo.safra),
           ano:   Array.from(meta.periodo.ano),
@@ -973,7 +999,7 @@ function mountTreeWidget(){
 
     // ===== Exportar / Importar CSV =====
     document.getElementById('exportCsv').addEventListener('click', ()=>{
-const header = ['id','data','natureza','conta','categoria','descricao','fornecedor_cliente','centro','pagamento','ir','valor'];
+const header = ['id','data','natureza','conta','categoria','descricao','fornecedor_cliente','centro','pagamento','dre','ir_eduardo','ir_roberto','valor'];
 const rows = state.lanc.map(x => header.map(h => {
   const v = x[h] ?? '';
   return typeof v === 'number' ? String(v).replace('.',',') : String(v).replace(/"/g,'""');
@@ -982,7 +1008,8 @@ const rows = state.lanc.map(x => header.map(h => {
       const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a');
       a.href=URL.createObjectURL(blob); a.download='sinuelo_finance.csv'; a.click();
     });
-    document.getElementById('importCsvBtn').addEventListener('click', ()=> document.getElementById('importCsv').click());
+   
+   document.getElementById('importCsvBtn').addEventListener('click', ()=> document.getElementById('importCsv').click());
     document.getElementById('importCsv').addEventListener('change', (e)=>{
       const file=e.target.files[0]; if(!file) return; const reader=new FileReader();
       reader.onload=()=>{
@@ -999,7 +1026,9 @@ const rows = state.lanc.map(x => header.map(h => {
   fornecedor_cliente: c[idx('fornecedor_cliente')] || '',
   centro: c[idx('centro')],
   pagamento: c[idx('pagamento')],
-  ir: ((c[idx('ir')]||'').toLowerCase()=='true' || c[idx('ir')]=='1'),
+  dre: ((c[idx('ir')]||'').toLowerCase()=='true' || c[idx('dre')]=='1'),
+  ir_eduardo: ((c[idx('ir')]||'').toLowerCase()=='true' || c[idx('ir_eduardo')]=='1'),
+  ir_roberto: ((c[idx('ir')]||'').toLowerCase()=='true' || c[idx('ir_roberto')]=='1'),
   valor: parseBR(c[idx('valor')]||'0')
 };
 
