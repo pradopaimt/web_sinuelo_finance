@@ -2,11 +2,8 @@ from sqlalchemy.orm import Session
 from . import models
 
 def seed_taxonomy(db: Session):
-    # já existe natureza cadastrada?
-    if db.query(models.Natureza).first():
-        return
-
-    taxonomy = [
+    if not db.query(models.Natureza).first():
+       taxonomy = [
         {
             "code": "RO",
             "nome": "RECEITAS OPERACIONAIS",
