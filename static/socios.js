@@ -34,10 +34,9 @@ async function mostrarExtrato(id, socios) {
   const startDefault = `${anoAtual}-01`;
   const endDefault = `${anoAtual}-12`;
 
+  // Só saldo inicial e filtros aqui
   saldoDiv.innerHTML = `
     <p><b>Saldo inicial:</b> R$ ${parseFloat(socio.saldo_inicial).toFixed(2)}</p>
-    <input type="number" id="novoSaldo" placeholder="Novo saldo" />
-    <button onclick="atualizarSaldo(${socio.id}, document.getElementById('novoSaldo').value)">Salvar saldo</button>
     <div style="margin-top:8px">
       <label>De: <input type="month" id="filtroStart" value="${startDefault}"></label>
       <label>Até: <input type="month" id="filtroEnd" value="${endDefault}"></label>
@@ -45,7 +44,7 @@ async function mostrarExtrato(id, socios) {
     </div>
   `;
 
-  await carregarExtrato(id); // já carrega com defaults
+  await carregarExtrato(id);  
 }
 
 async function carregarExtrato(id) {
@@ -54,23 +53,32 @@ async function carregarExtrato(id) {
   const data = await listarExtrato(id, start, end);
   const extratoDiv = document.getElementById("extratoSocio");
 
+  const rows = data.extrato.length > 0
+    ? data.extrato.map(e => `
+        <tr>
+          <td>${e.mes}</td>
+          <td>R$ ${e.entradas.toFixed(2)}</td>
+          <td>R$ ${e.saidas.toFixed(2)}</td>
+          <td><b>R$ ${e.saldo.toFixed(2)}</b></td>
+        </tr>
+      `).join("")
+    : `<tr><td colspan="4">Nenhum lançamento no período</td></tr>`;
+
+  // Novo saldo inicial vai no rodapé
   extratoDiv.innerHTML = `
     <h3>Extrato de ${data.socio}</h3>
     <table>
       <thead>
         <tr><th>Mês</th><th>Entradas</th><th>Saídas</th><th>Saldo acumulado</th></tr>
       </thead>
-      <tbody>
-        ${data.extrato.map(e => `
-          <tr>
-            <td>${e.mes}</td>
-            <td>R$ ${e.entradas.toFixed(2)}</td>
-            <td>R$ ${e.saidas.toFixed(2)}</td>
-            <td><b>R$ ${e.saldo.toFixed(2)}</b></td>
-          </tr>
-        `).join("")}
-      </tbody>
+      <tbody>${rows}</tbody>
     </table>
+    <div id="novoSaldoContainer" style="margin-top:12px; text-align:right;">
+      <input type="number" id="novoSaldo" placeholder="Novo saldo" />
+      <button onclick="atualizarSaldo(${id}, document.getElementById('novoSaldo').value)">
+        Salvar saldo
+      </button>
+    </div>
   `;
 }
 
@@ -82,7 +90,6 @@ async function carregarSocios() {
   const socios = await listarSocios();
   const div = document.getElementById("sociosConteudo");
 
-  // Dropdown
   div.innerHTML = `
     <label for="socioSelect">Selecione o sócio:</label>
     <select id="socioSelect">
@@ -99,14 +106,12 @@ async function carregarSocios() {
     select.value = eduardo.id;
   }
 
-  // Evento de troca
   select.addEventListener("change", () => mostrarExtrato(select.value, socios));
 
-  // Mostra saldo inicial e extrato do padrão
+  // Mostra o padrão
   mostrarExtrato(select.value, socios);
 }
 
-// Hook na aba
 document.addEventListener("DOMContentLoaded", () => {
   const tab = document.querySelector('[data-tab="socios"]');
   if (tab) {

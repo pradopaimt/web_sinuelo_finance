@@ -265,10 +265,9 @@ def extrato_socio(
 
     for l in lancs:
         mes = l.data.strftime("%Y-%m")
-        # pode bater pela conta/categoria ou descrição
-        if l.descricao == categoria_aporte:
+        if l.categoria and l.categoria.nome.upper() == categoria_aporte:
             resumo[mes]["entradas"] += float(l.valor)
-        elif l.descricao == categoria_retirada:
+        elif l.categoria and l.categoria.nome.upper() == categoria_retirada:
             resumo[mes]["saidas"] += float(l.valor)
 
     # ordenar meses
