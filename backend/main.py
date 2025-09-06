@@ -268,12 +268,12 @@ def extrato_socio(
 
         cat = None
         if l.categoria_id:
-        cat = db.query(models.Categoria).filter(models.Categoria.id == l.categoria_id).first()
+            cat = db.query(models.Categoria).filter(models.Categoria.id == l.categoria_id).first()
 
         if cat and cat.nome.upper() == categoria_aporte:
-        resumo[mes]["entradas"] += float(l.valor)
+            resumo[mes]["entradas"] += float(l.valor)
         elif cat and cat.nome.upper() == categoria_retirada:
-        resumo[mes]["saidas"] += float(l.valor)
+            resumo[mes]["saidas"] += float(l.valor)
 
     # ordenar meses
     saldo = float(socio.saldo_inicial or 0)
