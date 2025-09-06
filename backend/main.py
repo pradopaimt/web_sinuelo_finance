@@ -13,6 +13,7 @@ from . import models, schemas
 from .database import SessionLocal, engine, get_db
 from .seed import seed_taxonomy
 from sqlalchemy import extract, func
+from datetime import datetime, date
 
 app = FastAPI(title="Sinuelo Finance API")
 
@@ -224,7 +225,7 @@ def update_saldo_inicial(socio_id: int, saldo: schemas.SocioUpdateSaldo, db: Ses
     db.refresh(socio)
     return socio
 
-@app.get("/socios/{socio_id}/extrato")
+@app.get("/api/socios/{socio_id}/extrato")
 def extrato_socio(
     socio_id: int,
     start: str = Query(None, description="Data inicial no formato YYYY-MM"),
