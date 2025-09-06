@@ -262,13 +262,18 @@ def extrato_socio(
 
     from collections import defaultdict
     resumo = defaultdict(lambda: {"entradas": 0, "saidas": 0})
-
+    
     for l in lancs:
         mes = l.data.strftime("%Y-%m")
-        if l.categoria and l.categoria.nome.upper() == categoria_aporte:
-            resumo[mes]["entradas"] += float(l.valor)
-        elif l.categoria and l.categoria.nome.upper() == categoria_retirada:
-            resumo[mes]["saidas"] += float(l.valor)
+
+        cat = None
+        if l.categoria_id:
+        cat = db.query(models.Categoria).filter(models.Categoria.id == l.categoria_id).first()
+
+        if cat and cat.nome.upper() == categoria_aporte:
+        resumo[mes]["entradas"] += float(l.valor)
+        elif cat and cat.nome.upper() == categoria_retirada:
+        resumo[mes]["saidas"] += float(l.valor)
 
     # ordenar meses
     saldo = float(socio.saldo_inicial or 0)
