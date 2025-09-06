@@ -84,14 +84,6 @@ def oauth2callback(request: Request):
         token.write(user_credentials.to_json())
     return {"status": "Autenticado com sucesso!"}
 
-# Dependency para injetar sessão em cada request
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @app.get("/api/naturezas", response_model=list[schemas.NaturezaOut])
 def list_naturezas(db: Session = Depends(get_db)):
     return db.query(models.Natureza).all()
