@@ -47,3 +47,11 @@ class Lancamento(Base):
     ir_roberto = Column(Boolean, default=False)
     valor = Column(Numeric, nullable=False)
     anexo_nome = Column(String, nullable=True)
+
+class Socio(Base):
+    __tablename__ = "socio"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(100), unique=True, nullable=False)
+    saldo_inicial = Column(Numeric(12, 2), default=0)
+    

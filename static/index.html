@@ -77,6 +77,7 @@
         <div class="tab" data-tab="extrato">Extrato</div>
         <div class="tab" data-tab="categorias">Plano de Contas</div>
         <div class="tab" data-tab="demo">Demonstrativos</div>
+		<div class="tab" data-tab="socios">Saldo Sócios</div>
         <div class="install">
           <button id="btnInstall" style="display:none">Instalar app</button>
           <span id="installHint" style="font-size:12px; color:var(--muted); display:none">Use ⋮ → Adicionar à tela inicial</span>
@@ -293,14 +294,23 @@
       <div id="demonstrativo_tree"></div>
       <div id="err"></div>
       </section>
-  </main>
 
   <footer>© <span id="ano"></span> Agropecuária Sinuelo • Protótipo</footer>
+	<!-- Saldo sócios -->
+	<section id="socios" class="card" style="display:none">
+	<h2>Saldo Sócios</h2>
+	<div id="sociosConteudo"></div>
+	</section>
+</main>
 
   <!-- Widget do demonstrativo -->
   <script src="/static/demonstrativo_tree.js" defer></script>
 	<script>  const API_BASE = window.API_BASE; </script>
+
+  <!-- Saldo Sócios -->
+<script src="/static/socios.js" defer></script>
   <script>
+  
     // ===== PWA =====
     if('serviceWorker' in navigator){ window.addEventListener('load', ()=> navigator.serviceWorker.register('/static/sw.js').catch(console.warn)); }
     let deferredPrompt; const btnInstall=document.getElementById('btnInstall'); const installHint=document.getElementById('installHint');
@@ -501,7 +511,7 @@ function fillCategorias(){
   }
     // ===== Tabs =====
   function activateTab(targetId) {
-    const sections = ['lancamentos', 'extrato', 'categorias', 'demo'];
+    const sections = ['lancamentos', 'extrato', 'categorias', 'demo', 'socios'];
     const tabs = document.querySelectorAll('.tab');
 
     tabs.forEach(x => {
@@ -1093,8 +1103,7 @@ const rows = state.lanc.map(x => header.map(h => {
         el.style.display='block';
        }
     }
-
-  </script>
+</script>  
 </body>
 </html>
 

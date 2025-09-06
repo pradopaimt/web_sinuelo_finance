@@ -132,9 +132,24 @@ class LancamentoUpdate(BaseModel):
     valor: Optional[Decimal] = None
     anexo_nome: Optional[str] = None
 
-
 class LancamentoOut(LancamentoBase):
     id: int
+
+    class Config:
+        orm_mode = True
+
+class SocioBase(BaseModel):
+    nome: str
+
+class SocioCreate(SocioBase):
+    saldo_inicial: Decimal = 0
+
+class SocioUpdateSaldo(BaseModel):
+    saldo_inicial: Decimal
+
+class SocioResponse(SocioBase):
+    id: int
+    saldo_inicial: Decimal
 
     class Config:
         orm_mode = True

@@ -10,8 +10,9 @@ from fastapi.responses import RedirectResponse
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
 from . import models, schemas
-from .database import SessionLocal
+from .database import SessionLocal, engine, get_db
 from .seed import seed_taxonomy
+from sqlalchemy import extract, func
 
 app = FastAPI(title="Sinuelo Finance API")
 
@@ -206,3 +207,94 @@ def inativar_categoria(cat_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(cat)
     return cat
+
+# ---------- Rotas de Sócios ---------- #
+
+@app.post("/api/socios/", response_model=schemas.SocioResponse)
+def create_socio(socio: schemas.SocioCreate, db: Session = Depends(get_db)):
+    db_socio = models.Socio(nome=socio.nome, saldo_inicial=socio.saldo_inicial)
+    db.add(db_socio)
+    db.commit()
+    db.refresh(db_socio)
+    return db_socio
+
+@app.get("/api/socios/", response_model=list[schemas.SocioResponse])
+def list_socios(db: Session = Depends(get_db)):
+    return db.query(models.Socio).all()
+
+@app.put("/api/socios/{socio_id}/saldo_inicial", response_model=schemas.SocioResponse)
+def update_saldo_inicial(socio_id: int, saldo: schemas.SocioUpdateSaldo, db: Session = Depends(get_db)):
+    socio = db.query(models.Socio).filter(models.Socio.id == socio_id).first()
+    if not socio:
+        raise HTTPException(status_code=404, detail="Sócio não encontrado")
+    socio.saldo_inicial = saldo.saldo_inicial
+    db.commit()
+    db.refresh(socio)
+    return socio
+
+@app.get("/socios/{socio_id}/extrato")
+def extrato_socio(
+    socio_id: int,
+    start: str = Query(None, description="Data inicial no formato YYYY-MM"),
+    end: str = Query(None, description="Data final no formato YYYY-MM"),
+    db: Session = Depends(get_db)
+):
+    socio = db.query(models.Socio).filter(models.Socio.id == socio_id).first()
+    if not socio:
+        raise HTTPException(status_code=404, detail="Sócio não encontrado")
+
+    # converter strings YYYY-MM em datas
+    try:
+        start_date = datetime.strptime(start, "%Y-%m").date() if start else date(2000, 1, 1)
+        end_date = datetime.strptime(end, "%Y-%m").date() if end else date.today()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato inválido, use YYYY-MM")
+
+    # mapeamento simples pelo nome do sócio
+    if "EDUARDO" in socio.nome.upper():
+        categoria_aporte = "APORTE EDUARDO PAIM"
+        categoria_retirada = "RETIRADAS EDUARDO PAIM"
+    elif "ROBERTO" in socio.nome.upper():
+        categoria_aporte = "APORTE ROBERTO PAIM"
+        categoria_retirada = "RETIRADAS ROBERTO PAIM"
+    else:
+        raise HTTPException(status_code=400, detail="Sócio sem mapeamento de aportes/retiradas")
+
+    # buscar lançamentos no período
+    lancs = (
+        db.query(models.Lancamento)
+        .filter(models.Lancamento.data >= start_date, models.Lancamento.data <= end_date)
+        .all()
+    )
+
+    from collections import defaultdict
+    resumo = defaultdict(lambda: {"entradas": 0, "saidas": 0})
+
+    for l in lancs:
+        mes = l.data.strftime("%Y-%m")
+        # pode bater pela conta/categoria ou descrição
+        if l.descricao == categoria_aporte:
+            resumo[mes]["entradas"] += float(l.valor)
+        elif l.descricao == categoria_retirada:
+            resumo[mes]["saidas"] += float(l.valor)
+
+    # ordenar meses
+    saldo = float(socio.saldo_inicial or 0)
+    resultado = []
+    for mes in sorted(resumo.keys()):
+        entradas = resumo[mes]["entradas"]
+        saidas = resumo[mes]["saidas"]
+        saldo += entradas - saidas
+        resultado.append({
+            "mes": mes,
+            "entradas": entradas,
+            "saidas": saidas,
+            "saldo": saldo
+        })
+
+    return {
+        "socio": socio.nome,
+        "saldo_inicial": float(socio.saldo_inicial or 0),
+        "periodo": {"inicio": str(start_date), "fim": str(end_date)},
+        "extrato": resultado
+    }
