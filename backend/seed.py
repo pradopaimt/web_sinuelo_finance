@@ -102,4 +102,8 @@ def seed_taxonomy(db: Session):
         if not db.query(models.Centro).filter_by(nome=nome_centro).first():
             db.add(models.Centro(nome=nome_centro, area=0))
 
+    for nome in ["Eduardo Paim", "Roberto Paim"]:
+        if not db.query(models.Socio).filter_by(nome=nome).first():
+            db.add(models.Socio(nome=nome, saldo_inicial=0))
+            
     db.commit()
