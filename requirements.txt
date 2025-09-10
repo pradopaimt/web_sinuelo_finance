@@ -9,3 +9,4 @@ google-auth-httplib2
 google-auth-oauthlib
 google-api-core
 googleapis-common-protos
+Babel==2.15.0
