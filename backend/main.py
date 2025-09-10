@@ -14,8 +14,10 @@ from .database import SessionLocal, engine, get_db
 from .seed import seed_taxonomy
 from sqlalchemy import extract, func
 from datetime import datetime, date
-import locale
-locale.setlocale(locale.LC_TIME, "pt_BR.UTF-8")
+from babel.dates import format_date
+
+# dentro do extrato_socio
+mes = format_date(l.data, "MMMM/yyyy", locale="pt_BR")
 
 app = FastAPI(title="Sinuelo Finance API")
 
