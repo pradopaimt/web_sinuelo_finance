@@ -14,10 +14,6 @@ from .database import SessionLocal, engine, get_db
 from .seed import seed_taxonomy
 from sqlalchemy import extract, func
 from datetime import datetime, date
-from babel.dates import format_date
-
-# dentro do extrato_socio
-mes = format_date(l.data, "MMMM/yyyy", locale="pt_BR")
 
 app = FastAPI(title="Sinuelo Finance API")
 
@@ -301,7 +297,7 @@ def extrato_socio(
     resumo = defaultdict(lambda: {"entradas": 0, "saidas": 0})
     
     for l in lancs:
-        mes = l.data.strftime("%B/%Y")
+        mes = l.data.strftime("%m/%Y")
 
         cat = None
         if l.categoria_id:
@@ -315,7 +311,7 @@ def extrato_socio(
     # ordenar meses
     saldo = float(socio.saldo_inicial or 0)
     resultado = []
-    for mes in sorted(resumo.keys(), key=lambda m: datetime.strptime(m, "%B/%Y")):
+    for mes in sorted(resumo.keys(), key=lambda m: datetime.strptime(m, "%m/%Y")):
         entradas = resumo[mes]["entradas"]
         saidas = resumo[mes]["saidas"]
         saldo += entradas - saidas

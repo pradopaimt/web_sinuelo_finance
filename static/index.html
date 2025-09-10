@@ -321,7 +321,7 @@
     // ===== Utils =====
     const BRL = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
     const parseBR = (s)=> Number(String(s).replace(/\./g,'').replace(',','.')) || 0;
-    const fmtDate = (iso)=> new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR');
+    const fmtDate = (iso)=> {const d = new Date(iso + 'T00:00:00'); const mes = String(d.getMonth() + 1).padStart(2, '0'); const ano = d.getFullYear();  return `${mes}/${ano}`;};
 
     // ===== Estado =====
     const state = { lanc: [], centros: [], tax: [] };
