@@ -54,10 +54,9 @@ class CategoriaBase(BaseModel):
     conta_id: int
     nome: str
 
-
-class CategoriaCreate(CategoriaBase):
-    pass
-
+class CategoriaCreate(BaseModel):
+    nome: str
+    conta_id: int
 
 class CategoriaUpdate(BaseModel):
     nome: Optional[str] = None

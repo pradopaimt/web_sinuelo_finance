@@ -14,6 +14,8 @@ from .database import SessionLocal, engine, get_db
 from .seed import seed_taxonomy
 from sqlalchemy import extract, func
 from datetime import datetime, date
+import locale
+locale.setlocale(locale.LC_TIME, "pt_BR.UTF-8")
 
 app = FastAPI(title="Sinuelo Finance API")
 
@@ -201,6 +203,23 @@ def inativar_categoria(cat_id: int, db: Session = Depends(get_db)):
     db.refresh(cat)
     return cat
 
+@app.post("/api/categorias", response_model=schemas.CategoriaOut)
+def create_categoria(categoria: schemas.CategoriaCreate, db: Session = Depends(get_db)):
+    # precisa associar a conta
+    conta = db.query(models.Conta).filter(models.Conta.id == categoria.conta_id).first()
+    if not conta:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    obj = models.Categoria(
+        nome=categoria.nome,
+        conta_id=conta.id,
+        ativo=True
+    )
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
+    return obj
+
 # ---------- Rotas de Sócios ---------- #
 
 @app.post("/api/socios/", response_model=schemas.SocioResponse)
@@ -264,7 +283,7 @@ def extrato_socio(
     resumo = defaultdict(lambda: {"entradas": 0, "saidas": 0})
     
     for l in lancs:
-        mes = l.data.strftime("%Y-%m")
+        mes = l.data.strftime("%B/%Y")
 
         cat = None
         if l.categoria_id:
@@ -278,7 +297,7 @@ def extrato_socio(
     # ordenar meses
     saldo = float(socio.saldo_inicial or 0)
     resultado = []
-    for mes in sorted(resumo.keys()):
+    for mes in sorted(resumo.keys(), key=lambda m: datetime.strptime(m, "%B/%Y")):
         entradas = resumo[mes]["entradas"]
         saidas = resumo[mes]["saidas"]
         saldo += entradas - saidas
