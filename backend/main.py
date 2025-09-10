@@ -192,6 +192,22 @@ def inativar_conta(conta_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(conta)
     return conta
+    
+@app.post("/api/contas", response_model=schemas.ContaOut)
+def create_conta(conta: schemas.ContaCreate, db: Session = Depends(get_db)):
+    nat = db.query(models.Natureza).filter(models.Natureza.code == conta.natureza_code).first()
+    if not nat:
+        raise HTTPException(status_code=404, detail="Natureza não encontrada")
+    
+    obj = models.Conta(
+        nome=conta.nome,
+        natureza_code=nat.code,
+        ativo=True
+    )
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
+    return obj
 
 @app.put("/api/categorias/{cat_id}/inativar", response_model=schemas.CategoriaOut)
 def inativar_categoria(cat_id: int, db: Session = Depends(get_db)):

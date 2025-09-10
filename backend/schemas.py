@@ -32,11 +32,10 @@ class ContaBase(BaseModel):
     natureza_code: str
     nome: str
 
-
-class ContaCreate(ContaBase):
-    pass
-
-
+class ContaCreate(BaseModel):
+    nome: str
+    natureza_code: str
+    
 class ContaUpdate(BaseModel):
     nome: Optional[str] = None
     ativo: Optional[bool] = None
