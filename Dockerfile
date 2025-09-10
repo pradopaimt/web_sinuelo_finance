@@ -4,10 +4,8 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN apt-get update && apt-get install -y locales \
-    && locale-gen pt_BR.UTF-8 \
-    && update-locale LANG=pt_BR.UTF-8
 ENV LANG=pt_BR.UTF-8
+ENV LANGUAGE=pt_BR:pt:en
 ENV LC_ALL=pt_BR.UTF-8
 
 # copia tudo (backend + index.html + assets)
